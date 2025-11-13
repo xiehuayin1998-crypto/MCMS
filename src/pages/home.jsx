@@ -232,9 +232,9 @@ export default function HomePage(props) {
     if (type === 'business') {
       switch (item) {
         case 'vehicle':
-          toast({
-            title: "车辆管理",
-            description: "正在进入车辆管理系统"
+          $w.utils.navigateTo({
+            pageId: 'https://cloud1-1gpy146l61301e65-1300768879.tcloudbaseapp.com/app-6s8hfp2p/production/',
+            params: {}
           });
           break;
         case 'meeting':
@@ -398,13 +398,13 @@ export default function HomePage(props) {
                 <ChevronDown className="w-4 h-4 ml-1" />
               </button>
               {showBusinessMenu && <div className="absolute left-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
-                {/* <button onClick={() => handleNavigationClick('business', 'vehicle')} className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center">
-                    <Car className="w-4 h-4 mr-2" />
-                    车辆管理
-                   </button> */}
                 <button onClick={() => handleNavigationClick('business', 'meeting')} className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center">
                   <Calendar className="w-4 h-4 mr-2" />
                   会议室预定
+                </button>
+                <button onClick={() => handleNavigationClick('business', 'vehicle')} className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center">
+                  <Car className="w-4 h-4 mr-2" />
+                  车辆管理
                 </button>
                 {/* <button onClick={() => handleNavigationClick('business', 'plan')} className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center">
                     <FileText className="w-4 h-4 mr-2" />
