@@ -1,0 +1,76 @@
+
+[
+  {
+    "_id": "1",
+    "departmentId": "HR",
+    "departmentCode": "HR",
+    "departmentName": "人力资源部",
+    "description": "负责公司人力资源规划、招聘、培训、绩效管理、薪酬福利等人力资源相关工作",
+    "manager": "谢华寅",
+    "parent_id": null,
+    "status": true,
+    "createdAt": 1717286400000,
+    "updatedAt": 1717286400000
+  },
+  {
+    "_id": "2",
+    "departmentId": "FIN",
+    "departmentCode": "FIN",
+    "departmentName": "财务部",
+    "description": "负责公司财务管理、会计核算、预算管理、成本控制、资金管理等财务相关工作",
+    "manager": "刘文科",
+    "parent_id": null,
+    "status": true,
+    "createdAt": 1717286400000,
+    "updatedAt": 1717286400000
+  },
+  {
+    "_id": "3",
+    "departmentId": "TECH",
+    "departmentCode": "TECH",
+    "departmentName": "技术部",
+    "description": "负责公司技术研发、产品设计、技术支持、系统维护等技术相关工作",
+    "manager": "张技术",
+    "parent_id": null,
+    "status": true,
+    "createdAt": 1717286400000,
+    "updatedAt": 1717286400000
+  },
+  {
+    "_id": "4",
+    "departmentId": "MKT",
+    "departmentCode": "MKT",
+    "departmentName": "市场部",
+    "description": "负责公司市场调研、营销策划、品牌推广、客户关系管理等市场相关工作",
+    "manager": "李市场",
+    "parent_id": null,
+    "status": true,
+    "createdAt": 1717286400000,
+    "updatedAt": 1717286400000
+  },
+  {
+    "_id": "5",
+    "departmentId": "OPS",
+    "departmentCode": "OPS",
+    "departmentName": "运营部",
+    "description": "负责公司日常运营管理、流程优化、质量控制、项目管理等运营相关工作",
+    "manager": "王运营",
+    "parent_id": null,
+    "status": true,
+    "createdAt": 1717286400000,
+    "updatedAt": 1717286400000
+  },
+  {
+    "_id": "6",
+    "departmentId": "OMD",
+    "departmentCode": "OMD",
+    "departmentName": "运营管理部",
+    "description": "销售部",
+    "manager": "",
+    "parent_id": null,
+    "status": true,
+    "createdAt": 1729507966000,
+    "updatedAt": 1729507966000
+  }
+]
+  

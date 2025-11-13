@@ -1,0 +1,39 @@
+
+[
+  {
+    "_id": "1",
+    "serviceId": "S001",
+    "serviceName": "投影仪",
+    "createdAt": 1717286400000,
+    "updatedAt": 1717286400000
+  },
+  {
+    "_id": "2",
+    "serviceId": "S002",
+    "serviceName": "白板",
+    "createdAt": 1717286400000,
+    "updatedAt": 1717286400000
+  },
+  {
+    "_id": "3",
+    "serviceId": "S003",
+    "serviceName": "音响系统",
+    "createdAt": 1717286400000,
+    "updatedAt": 1717286400000
+  },
+  {
+    "_id": "4",
+    "serviceId": "S004",
+    "serviceName": "茶水服务",
+    "createdAt": 1717286400000,
+    "updatedAt": 1717286400000
+  },
+  {
+    "_id": "5",
+    "serviceId": "S005",
+    "serviceName": "视频会议设备",
+    "createdAt": 1717286400000,
+    "updatedAt": 1717286400000
+  }
+]
+  

@@ -1,0 +1,37 @@
+
+[
+  {
+    "_id": "1",
+    "roleId": "admin",
+    "roleName": "系统管理员",
+    "roleDesc": "拥有系统所有权限",
+    "permissions": "[\"employee_management\", \"department_management\", \"system_settings\", \"meeting.booking.approve\", \"meeting.room.manage\"]",
+    "status": "active",
+    "level": 1,
+    "createdAt": 1717286400000,
+    "updatedAt": 1717286400000
+  },
+  {
+    "_id": "2",
+    "roleId": "user",
+    "roleName": "普通用户",
+    "roleDesc": "拥有基本使用权限",
+    "permissions": "[\"meeting.booking.create\"]",
+    "status": "active",
+    "level": 3,
+    "createdAt": 1717286400000,
+    "updatedAt": 1717286400000
+  },
+  {
+    "_id": "3",
+    "roleId": "meeting_admin",
+    "roleName": "会议室管理员",
+    "roleDesc": "拥有会议室管理权限",
+    "permissions": "[\"meeting.booking.approve\"]",
+    "status": "active",
+    "level": 2,
+    "createdAt": 1717286400000,
+    "updatedAt": 1717286400000
+  }
+]
+  

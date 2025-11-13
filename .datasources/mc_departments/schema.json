@@ -1,0 +1,43 @@
+
+{
+  "name": "mc_departments",
+  "title": "部门管理",
+  "schemas": [
+    {
+      "name": "departmentId",
+      "title": "部门ID",
+      "type": "String"
+    },
+    {
+      "name": "departmentCode",
+      "title": "部门编码",
+      "type": "String"
+    },
+    {
+      "name": "departmentName",
+      "title": "部门名称",
+      "type": "String"
+    },
+    {
+      "name": "description",
+      "title": "部门描述",
+      "type": "MultiLineString"
+    },
+    {
+      "name": "manager",
+      "title": "部门负责人",
+      "type": "String"
+    },
+    {
+      "name": "parent_id",
+      "title": "上级部门",
+      "type": "String"
+    },
+    {
+      "name": "status",
+      "title": "部门状态",
+      "type": "Boolean"
+    }
+  ]
+}
+  

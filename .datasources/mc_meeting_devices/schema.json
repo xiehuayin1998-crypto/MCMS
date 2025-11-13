@@ -1,0 +1,18 @@
+
+{
+  "name": "mc_meeting_devices",
+  "title": "会议设备管理",
+  "schemas": [
+    {
+      "name": "device_id",
+      "title": "设备ID",
+      "type": "String"
+    },
+    {
+      "name": "device_name",
+      "title": "设备名称",
+      "type": "String"
+    }
+  ]
+}
+  

@@ -1,0 +1,79 @@
+
+[
+  {
+    "_id": "1",
+    "fileId": "file_001",
+    "fileName": "公司规章制度.pdf",
+    "filePath": "/files/company_rules.pdf",
+    "uploader": "张三",
+    "uploadTime": 1717286400000,
+    "fileType": "pdf",
+    "fileSize": 2621440,
+    "fileDesc": "公司规章制度文件，包含员工行为规范、考勤制度等内容",
+    "fileCategory": "document",
+    "downloadCount": 156,
+    "createdAt": 1717286400000,
+    "updatedAt": 1717286400000
+  },
+  {
+    "_id": "2",
+    "fileId": "file_002",
+    "fileName": "年度工作总结.docx",
+    "filePath": "/files/annual_summary.docx",
+    "uploader": "李四",
+    "uploadTime": 1717286400000,
+    "fileType": "docx",
+    "fileSize": 1887436,
+    "fileDesc": "2024年度工作总结报告，包含各部门工作成果和未来规划",
+    "fileCategory": "document",
+    "downloadCount": 89,
+    "createdAt": 1717286400000,
+    "updatedAt": 1717286400000
+  },
+  {
+    "_id": "3",
+    "fileId": "file_003",
+    "fileName": "员工信息表.xlsx",
+    "filePath": "/files/employee_info.xlsx",
+    "uploader": "王五",
+    "uploadTime": 1717286400000,
+    "fileType": "xlsx",
+    "fileSize": 897584,
+    "fileDesc": "员工基本信息表格，包含联系方式、部门分配等信息",
+    "fileCategory": "document",
+    "downloadCount": 234,
+    "createdAt": 1717286400000,
+    "updatedAt": 1717286400000
+  },
+  {
+    "_id": "4",
+    "fileId": "file_004",
+    "fileName": "公司Logo.png",
+    "filePath": "/files/company_logo.png",
+    "uploader": "赵六",
+    "uploadTime": 1717286400000,
+    "fileType": "png",
+    "fileSize": 478412,
+    "fileDesc": "公司官方Logo图片，用于各类文档和宣传材料",
+    "fileCategory": "image",
+    "downloadCount": 67,
+    "createdAt": 1717286400000,
+    "updatedAt": 1717286400000
+  },
+  {
+    "_id": "5",
+    "fileId": "file_005",
+    "fileName": "项目计划书.zip",
+    "filePath": "/files/project_plan.zip",
+    "uploader": "钱七",
+    "uploadTime": 1717286400000,
+    "fileType": "zip",
+    "fileSize": 3355443,
+    "fileDesc": "新项目计划书压缩包，包含详细的项目规划和时间安排",
+    "fileCategory": "other",
+    "downloadCount": 45,
+    "createdAt": 1717286400000,
+    "updatedAt": 1717286400000
+  }
+]
+  

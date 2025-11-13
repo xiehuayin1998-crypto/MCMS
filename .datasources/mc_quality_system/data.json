@@ -1,0 +1,37 @@
+
+[
+  {
+    "_id": "1",
+    "fileName": "ISO9001质量手册2024版.pdf",
+    "title": "ISO9001质量管理体系手册",
+    "category": "质量手册",
+    "fileUrl": "cloud://cloud1-1gpy146l61301e65.636c-cloud1-1gpy146l61301e65-1300768879/quality/iso9001-manual-2024.pdf",
+    "fileSize": 2457600,
+    "uploadedAt": 1705278600000,
+    "updatedAt": 1705278600000,
+    "uploaderId": "admin001"
+  },
+  {
+    "_id": "2",
+    "fileName": "质量程序文件汇编.pdf",
+    "title": "质量程序文件汇编",
+    "category": "程序文件",
+    "fileUrl": "cloud://cloud1-1gpy146l61301e65.636c-cloud1-1gpy146l61301e65-1300768879/quality/quality-procedures-2024.pdf",
+    "fileSize": 3145728,
+    "uploadedAt": 1704883200000,
+    "updatedAt": 1704883200000,
+    "uploaderId": "admin001"
+  },
+  {
+    "_id": "3",
+    "fileName": "质量记录表格模板.docx",
+    "title": "质量记录表格模板",
+    "category": "记录表格",
+    "fileUrl": "cloud://cloud1-1gpy146l61301e65.636c-cloud1-1gpy146l61301e65-1300768879/quality/quality-forms-template.docx",
+    "fileSize": 524288,
+    "uploadedAt": 1704421200000,
+    "updatedAt": 1704421200000,
+    "uploaderId": "admin001"
+  }
+]
+  

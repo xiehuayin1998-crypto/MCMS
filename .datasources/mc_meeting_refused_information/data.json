@@ -1,0 +1,59 @@
+
+[
+  {
+    "_id": "1",
+    "refuseId": "REF001",
+    "bookingId": "BOOK001",
+    "reason": "会议室已被占用，请选择其他时间段",
+    "refused_by": "管理员A",
+    "refused_time": 1717286400000,
+    "action_type": "拒绝",
+    "original_status": "待审批",
+    "current_status": "已拒绝",
+    "meeting_topic": "项目启动会议",
+    "applicant": "张三",
+    "room_name": "会议室A",
+    "start_time": 1717300800000,
+    "end_time": 1717304400000,
+    "createdAt": 1717286400000,
+    "updatedAt": 1717286400000
+  },
+  {
+    "_id": "2",
+    "refuseId": "REF002",
+    "bookingId": "BOOK002",
+    "reason": "申请信息不完整，请补充会议详情",
+    "refused_by": "管理员B",
+    "refused_time": 1717372800000,
+    "action_type": "拒绝",
+    "original_status": "待审批",
+    "current_status": "已拒绝",
+    "meeting_topic": "技术评审会议",
+    "applicant": "李四",
+    "room_name": "会议室B",
+    "start_time": 1717387200000,
+    "end_time": 1717390800000,
+    "createdAt": 1717372800000,
+    "updatedAt": 1717372800000
+  },
+  {
+    "_id": "3",
+    "refuseId": "REF003",
+    "bookingId": "BOOK003",
+    "reason": "会议时间冲突，该时间段已有其他重要会议",
+    "revoked_by": "管理员C",
+    "revoked_time": 1717459200000,
+    "revoke_reason": "临时有重要会议安排，需要调整会议室使用",
+    "action_type": "撤销",
+    "original_status": "已通过",
+    "current_status": "已拒绝",
+    "meeting_topic": "部门例会",
+    "applicant": "王五",
+    "room_name": "会议室C",
+    "start_time": 1717473600000,
+    "end_time": 1717477200000,
+    "createdAt": 1717459200000,
+    "updatedAt": 1717459200000
+  }
+]
+  

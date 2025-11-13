@@ -1,0 +1,38 @@
+
+{
+  "name": "mc_roles",
+  "title": "角色管理",
+  "schemas": [
+    {
+      "name": "roleId",
+      "title": "角色ID",
+      "type": "String"
+    },
+    {
+      "name": "roleName",
+      "title": "角色名称",
+      "type": "String"
+    },
+    {
+      "name": "roleDesc",
+      "title": "角色描述",
+      "type": "MultiLineString"
+    },
+    {
+      "name": "permissions",
+      "title": "权限列表",
+      "type": "String"
+    },
+    {
+      "name": "status",
+      "title": "角色状态",
+      "type": "String"
+    },
+    {
+      "name": "level",
+      "title": "级别",
+      "type": "Number"
+    }
+  ]
+}
+  

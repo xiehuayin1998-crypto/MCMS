@@ -1,0 +1,44 @@
+
+[
+  {
+    "_id": "1",
+    "roomId": "MR-001",
+    "name": "大会议室",
+    "location": "A栋3楼301",
+    "capacity": 20,
+    "status": "可使用",
+    "createdAt": 1717286400000,
+    "updatedAt": 1717286400000
+  },
+  {
+    "_id": "2",
+    "roomId": "MR-002",
+    "name": "小会议室",
+    "location": "A栋3楼302",
+    "capacity": 8,
+    "status": "可使用",
+    "createdAt": 1717286400000,
+    "updatedAt": 1717286400000
+  },
+  {
+    "_id": "3",
+    "roomId": "MR-003",
+    "name": "贵宾会议室",
+    "location": "B栋5楼501",
+    "capacity": 12,
+    "status": "已停用",
+    "createdAt": 1717286400000,
+    "updatedAt": 1717286400000
+  },
+  {
+    "_id": "4",
+    "roomId": "MR-004",
+    "name": "培训室",
+    "location": "A栋2楼201",
+    "capacity": 50,
+    "status": "可使用",
+    "createdAt": 1717286400000,
+    "updatedAt": 1717286400000
+  }
+]
+  

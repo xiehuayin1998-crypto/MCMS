@@ -1,0 +1,92 @@
+
+{
+  "name": "mc_meeting_refused_information",
+  "title": "会议室预约拒绝原因管理",
+  "schemas": [
+    {
+      "name": "refuseId",
+      "title": "拒绝ID",
+      "type": "String"
+    },
+    {
+      "name": "bookingId",
+      "title": "关联预约",
+      "type": "String"
+    },
+    {
+      "name": "reason",
+      "title": "拒绝原因",
+      "type": "MultiLineString"
+    },
+    {
+      "name": "refused_by",
+      "title": "拒绝人",
+      "type": "String"
+    },
+    {
+      "name": "refused_time",
+      "title": "拒绝时间",
+      "type": "DateTime",
+      "format": "timestamp-ms"
+    },
+    {
+      "name": "revoked_by",
+      "title": "撤销人",
+      "type": "String"
+    },
+    {
+      "name": "revoked_time",
+      "title": "撤销时间",
+      "type": "DateTime",
+      "format": "timestamp-ms"
+    },
+    {
+      "name": "revoke_reason",
+      "title": "撤销原因说明",
+      "type": "MultiLineString"
+    },
+    {
+      "name": "action_type",
+      "title": "操作类型",
+      "type": "String"
+    },
+    {
+      "name": "original_status",
+      "title": "原状态",
+      "type": "String"
+    },
+    {
+      "name": "current_status",
+      "title": "当前状态",
+      "type": "String"
+    },
+    {
+      "name": "meeting_topic",
+      "title": "会议主题",
+      "type": "String"
+    },
+    {
+      "name": "applicant",
+      "title": "申请人",
+      "type": "String"
+    },
+    {
+      "name": "room_name",
+      "title": "会议室名称",
+      "type": "String"
+    },
+    {
+      "name": "start_time",
+      "title": "会议开始时间",
+      "type": "DateTime",
+      "format": "timestamp-ms"
+    },
+    {
+      "name": "end_time",
+      "title": "会议结束时间",
+      "type": "DateTime",
+      "format": "timestamp-ms"
+    }
+  ]
+}
+  

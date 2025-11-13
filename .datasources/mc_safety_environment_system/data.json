@@ -1,0 +1,37 @@
+
+[
+  {
+    "_id": "1",
+    "fileName": "安全生产管理制度2024版.pdf",
+    "title": "安全生产管理制度",
+    "category": "安全制度",
+    "fileUrl": "cloud://cloud1-1gpy146l61301e65.636c-cloud1-1gpy146l61301e65-1300768879/safety/safety-management-2024.pdf",
+    "fileSize": 2097152,
+    "uploadedAt": 1705278600000,
+    "updatedAt": 1705278600000,
+    "uploaderId": "admin001"
+  },
+  {
+    "_id": "2",
+    "fileName": "环境保护管理制度.pdf",
+    "title": "环境保护管理制度",
+    "category": "环保制度",
+    "fileUrl": "cloud://cloud1-1gpy146l61301e65.636c-cloud1-1gpy146l61301e65-1300768879/environment/environmental-protection-policy.pdf",
+    "fileSize": 1572864,
+    "uploadedAt": 1704883200000,
+    "updatedAt": 1704883200000,
+    "uploaderId": "admin001"
+  },
+  {
+    "_id": "3",
+    "fileName": "应急预案汇编.docx",
+    "title": "应急预案汇编",
+    "category": "应急预案",
+    "fileUrl": "cloud://cloud1-1gpy146l61301e65.636c-cloud1-1gpy146l61301e65-1300768879/emergency/emergency-plan-collection.docx",
+    "fileSize": 1048576,
+    "uploadedAt": 1704421200000,
+    "updatedAt": 1704421200000,
+    "uploaderId": "admin001"
+  }
+]
+  

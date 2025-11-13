@@ -1,0 +1,17 @@
+
+{
+  "name": "mc_meeting_services",
+  "title": "会议服务管理",
+  "schemas": [
+    {
+      "name": "service_id",
+      "title": "服务ID",
+      "type": "String"
+    },
+    {
+      "name": "service_name",
+      "title": "服务名称",
+      "type": "String"
+    }
+  ]
+}

@@ -1,0 +1,43 @@
+
+{
+  "name": "mc_lunbotu_management",
+  "title": "轮播图管理",
+  "schemas": [
+    {
+      "name": "title",
+      "title": "标题",
+      "type": "String"
+    },
+    {
+      "name": "imageUrl",
+      "title": "图片URL",
+      "type": "Image"
+    },
+    {
+      "name": "linkUrl",
+      "title": "链接地址",
+      "type": "Url"
+    },
+    {
+      "name": "description",
+      "title": "描述",
+      "type": "String"
+    },
+    {
+      "name": "sortOrder",
+      "title": "显示顺序",
+      "type": "Number"
+    },
+    {
+      "name": "isActive",
+      "title": "启用状态",
+      "type": "Boolean"
+    },
+    {
+      "name": "intervalTime",
+      "title": "轮播间隔时间",
+      "type": "Number"
+    }
+  ]
+}
+  

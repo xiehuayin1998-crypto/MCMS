@@ -1,0 +1,59 @@
+
+{
+  "name": "mc_filemanagement",
+  "title": "文件管理",
+  "schemas": [
+    {
+      "name": "fileId",
+      "title": "文件ID",
+      "type": "String"
+    },
+    {
+      "name": "fileName",
+      "title": "文件名",
+      "type": "String"
+    },
+    {
+      "name": "filePath",
+      "title": "文件路径",
+      "type": "String"
+    },
+    {
+      "name": "uploader",
+      "title": "上传者",
+      "type": "String"
+    },
+    {
+      "name": "uploadTime",
+      "title": "上传时间",
+      "type": "DateTime",
+      "format": "timestamp-ms"
+    },
+    {
+      "name": "fileType",
+      "title": "文件类型",
+      "type": "String"
+    },
+    {
+      "name": "fileSize",
+      "title": "文件大小",
+      "type": "Number"
+    },
+    {
+      "name": "fileDesc",
+      "title": "文件描述",
+      "type": "MultiLineString"
+    },
+    {
+      "name": "fileCategory",
+      "title": "文件分类",
+      "type": "String"
+    },
+    {
+      "name": "downloadCount",
+      "title": "下载次数",
+      "type": "Number"
+    }
+  ]
+}
+  

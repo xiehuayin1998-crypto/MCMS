@@ -1,0 +1,39 @@
+
+[
+  {
+    "_id": "1",
+    "deviceId": "D001",
+    "deviceName": "投影仪",
+    "createdAt": 1717286400000,
+    "updatedAt": 1717286400000
+  },
+  {
+    "_id": "2",
+    "deviceId": "D002",
+    "deviceName": "音响系统",
+    "createdAt": 1717286400000,
+    "updatedAt": 1717286400000
+  },
+  {
+    "_id": "3",
+    "deviceId": "D003",
+    "deviceName": "麦克风",
+    "createdAt": 1717286400000,
+    "updatedAt": 1717286400000
+  },
+  {
+    "_id": "4",
+    "deviceId": "D004",
+    "deviceName": "视频会议终端",
+    "createdAt": 1717286400000,
+    "updatedAt": 1717286400000
+  },
+  {
+    "_id": "5",
+    "deviceName": "电子白板",
+    "deviceId": "D005",
+    "createdAt": 1717286400000,
+    "updatedAt": 1717286400000
+  }
+]
+  

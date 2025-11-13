@@ -1,0 +1,28 @@
+
+[
+  {
+    "_id": "1",
+    "fileName": "员工手册2024版.pdf",
+    "fileUrl": "https://example.com/files/employee-handbook-2024.pdf",
+    "uploadedAt": 1705278600000,
+    "updatedAt": 1705278600000,
+    "uploaderId": "admin001"
+  },
+  {
+    "_id": "2",
+    "fileName": "考勤管理制度.pdf",
+    "fileUrl": "https://example.com/files/attendance-policy.pdf",
+    "uploadedAt": 1704883200000,
+    "updatedAt": 1704883200000,
+    "uploaderId": "admin001"
+  },
+  {
+    "_id": "3",
+    "fileName": "薪酬福利制度.pdf",
+    "fileUrl": "https://example.com/files/salary-benefits-policy.pdf",
+    "uploadedAt": 1704421200000,
+    "updatedAt": 1704421200000,
+    "uploaderId": "admin001"
+  }
+]
+  

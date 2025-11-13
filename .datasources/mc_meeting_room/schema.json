@@ -1,0 +1,33 @@
+
+{
+  "name": "mc_meeting_room",
+  "title": "会议室管理",
+  "schemas": [
+    {
+      "name": "roomId",
+      "title": "会议室ID",
+      "type": "String"
+    },
+    {
+      "name": "name",
+      "title": "会议室名称",
+      "type": "String"
+    },
+    {
+      "name": "location",
+      "title": "位置",
+      "type": "String"
+    },
+    {
+      "name": "capacity",
+      "title": "容纳人数",
+      "type": "Number"
+    },
+    {
+      "name": "status",
+      "title": "状态",
+      "type": "String"
+    }
+  ]
+}
+  

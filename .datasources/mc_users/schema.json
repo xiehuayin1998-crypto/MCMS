@@ -1,0 +1,249 @@
+
+{
+  "name": "mc_users",
+  "title": "用户管理",
+  "schemas": [
+    {
+      "name": "name",
+      "title": "姓名",
+      "type": "String"
+    },
+    {
+      "name": "username",
+      "title": "用户名",
+      "type": "String"
+    },
+    {
+      "name": "password",
+      "title": "密码",
+      "type": "String"
+    },
+    {
+      "name": "isAdmin",
+      "title": "是否管理员",
+      "type": "Boolean"
+    },
+    {
+      "name": "permissions",
+      "title": "权限列表",
+      "type": "String"
+    },
+    {
+      "name": "roles",
+      "title": "用户角色",
+      "type": "Array",
+      "items": {
+        "type": "String"
+      }
+    },
+    {
+      "name": "roles_level",
+      "title": "角色等级",
+      "type": "Array",
+      "items": {
+        "type": "Number"
+      }
+    },
+    {
+      "name": "isMinister",
+      "title": "是否部长",
+      "type": "Boolean"
+    },
+    {
+      "name": "navigationOrder",
+      "title": "功能导航顺序",
+      "type": "String"
+    },
+    {
+      "name": "department",
+      "title": "所属部门",
+      "type": "String"
+    },
+    {
+      "name": "sex",
+      "title": "性别",
+      "type": "String"
+    },
+    {
+      "name": "employee_number",
+      "title": "工号",
+      "type": "String"
+    },
+    {
+      "name": "employee_type",
+      "title": "类别",
+      "type": "String"
+    },
+    {
+      "name": "Workplace",
+      "title": "工作地",
+      "type": "String"
+    },
+    {
+      "name": "mexican_company_positions",
+      "title": "墨西哥公司职位",
+      "type": "String"
+    },
+    {
+      "name": "headquarters_location",
+      "title": "总部所属单位",
+      "type": "String"
+    },
+    {
+      "name": "original_position",
+      "title": "总部或原总部岗位",
+      "type": "String"
+    },
+    {
+      "name": "join_date",
+      "title": "入司时间",
+      "type": "Date",
+      "format": "date"
+    },
+    {
+      "name": "birthday",
+      "title": "出生日期",
+      "type": "Date",
+      "format": "date"
+    },
+    {
+      "name": "age",
+      "title": "年龄",
+      "type": "Number"
+    },
+    {
+      "name": "birth_place",
+      "title": "籍贯",
+      "type": "String"
+    },
+    {
+      "name": "political_status",
+      "title": "政治面貌",
+      "type": "String"
+    },
+    {
+      "name": "education",
+      "title": "学历",
+      "type": "String"
+    },
+    {
+      "name": "graduation_institution",
+      "title": "毕业院校",
+      "type": "String"
+    },
+    {
+      "name": "major",
+      "title": "专业",
+      "type": "String"
+    },
+    {
+      "name": "job_title",
+      "title": "职称",
+      "type": "String"
+    },
+    {
+      "name": "job_title_date",
+      "title": "当前职称/技能等级聘用时间",
+      "type": "Date",
+      "format": "date"
+    },
+    {
+      "name": "hierarchy",
+      "title": "层级",
+      "type": "String"
+    },
+    {
+      "name": "hierarchy_date",
+      "title": "当前层级聘用时间",
+      "type": "Date",
+      "format": "date"
+    },
+    {
+      "name": "ID_number",
+      "title": "身份证号",
+      "type": "String"
+    },
+    {
+      "name": "official_passport",
+      "title": "因公护照号",
+      "type": "String"
+    },
+    {
+      "name": "official_passport_date",
+      "title": "因公护照有效期",
+      "type": "Date",
+      "format": "date"
+    },
+    {
+      "name": "private_passport",
+      "title": "因私护照号",
+      "type": "String"
+    },
+    {
+      "name": "private_passport_date",
+      "title": "因私护照到期时间",
+      "type": "Date",
+      "format": "date"
+    },
+    {
+      "name": "use_visa_type",
+      "title": "使用签证类型",
+      "type": "String"
+    },
+    {
+      "name": "visa_validity_period",
+      "title": "签证有效期",
+      "type": "Date",
+      "format": "date"
+    },
+    {
+      "name": "localization_expenses_time",
+      "title": "本地化开支时间",
+      "type": "Date",
+      "format": "date"
+    },
+    {
+      "name": "permanent_address_china",
+      "title": "国内常住地址",
+      "type": "String"
+    },
+    {
+      "name": "contact_number_china",
+      "title": "国内联系电话",
+      "type": "String"
+    },
+    {
+      "name": "contact_number_china",
+      "title": "墨西哥联系电话",
+      "type": "String"
+    },
+    {
+      "name": "first_date_mexico",
+      "title": "首次入境墨西哥时间",
+      "type": "Date",
+      "format": "date"
+    },
+    {
+      "name": "emergency_contact_name_china",
+      "title": "国内紧急联系人姓名",
+      "type": "String"
+    },
+    {
+      "name": "relationship_with_domestic_emergency_contacts",
+      "title": "与国内紧急联系人的关系",
+      "type": "String"
+    },
+    {
+      "name": "emergency_contact_number_china",
+      "title": "国内紧急联系人电话",
+      "type": "String"
+    },
+    {
+      "name": "birthdate",
+      "title": "生日",
+      "type": "Date",
+      "format": "date"
+    }
+  ]
+}
+  

@@ -1,0 +1,97 @@
+
+{
+  "name": "mc_meeting_booking",
+  "title": "会议室预约管理",
+  "schemas": [
+    {
+      "name": "bookingId",
+      "title": "预约ID",
+      "type": "String"
+    },
+    {
+      "name": "roomId",
+      "title": "关联会议室",
+      "type": "String"
+    },
+    {
+      "name": "applicant",
+      "title": "申请人",
+      "type": "String"
+    },
+    {
+      "name": "applicantName",
+      "title": "申请人姓名",
+      "type": "String"
+    },
+    {
+      "name": "topic",
+      "title": "会议主题",
+      "type": "String"
+    },
+    {
+      "name": "purpose",
+      "title": "会议用途",
+      "type": "String"
+    },
+    {
+      "name": "attendeeCount",
+      "title": "与会人数",
+      "type": "Number"
+    },
+    {
+      "name": "startTime",
+      "title": "开始时间",
+      "type": "Number"
+    },
+    {
+      "name": "endTime",
+      "title": "结束时间",
+      "type": "Number"
+    },
+    {
+      "name": "services",
+      "title": "服务ID数组",
+      "type": "Array",
+      "items": {
+        "type": "String"
+      }
+    },
+    {
+      "name": "devices",
+      "title": "设备ID数组",
+      "type": "Array",
+      "items": {
+        "type": "String"
+      }
+    },
+    {
+      "name": "status",
+      "title": "申请状态",
+      "type": "String"
+    },
+    {
+      "name": "rejectReason",
+      "title": "拒绝原因",
+      "type": "String"
+    },
+    {
+      "name": "adjustHistory",
+      "title": "调整记录",
+      "type": "Array",
+      "items": {
+        "type": "Object"
+      }
+    },
+    {
+      "name": "cancelledAt",
+      "title": "撤销时间",
+      "type": "Number"
+    },
+    {
+      "name": "cancelledBy",
+      "title": "撤销人",
+      "type": "String"
+    }
+  ]
+}
+  

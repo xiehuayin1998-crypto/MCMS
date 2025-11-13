@@ -1,0 +1,48 @@
+
+{
+  "name": "mc_safety_environment_system",
+  "title": "安环体系文件管理",
+  "schemas": [
+    {
+      "name": "fileName",
+      "title": "文件名",
+      "type": "String"
+    },
+    {
+      "name": "title",
+      "title": "文件标题",
+      "type": "String"
+    },
+    {
+      "name": "category",
+      "title": "文件分类",
+      "type": "String"
+    },
+    {
+      "name": "fileUrl",
+      "title": "云储存文件链接",
+      "type": "Url"
+    },
+    {
+      "name": "fileSize",
+      "title": "文件大小",
+      "type": "Number"
+    },
+    {
+      "name": "uploadedAt",
+      "title": "上传时间",
+      "type": "Number"
+    },
+    {
+      "name": "updatedAt",
+      "title": "更新时间",
+      "type": "Number"
+    },
+    {
+      "name": "uploaderId",
+      "title": "上传人ID",
+      "type": "String"
+    }
+  ]
+}
+  

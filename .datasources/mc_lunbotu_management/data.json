@@ -1,0 +1,40 @@
+
+[
+  {
+    "_id": "1",
+    "title": "轮播图1",
+    "imageUrl": "cloud://cloud1-1gpy146l61301e65.636c-cloud1-1gpy146l61301e65-1300768879/lunbotu/lunbotu1.jpg",
+    "linkUrl": "",
+    "description": "第一张轮播图",
+    "sortOrder": 1,
+    "isActive": true,
+    "intervalTime": 5000,
+    "createdAt": 1728796800000,
+    "updatedAt": 1728796800000
+  },
+  {
+    "_id": "2",
+    "title": "轮播图2",
+    "imageUrl": "cloud://cloud1-1gpy146l61301e65.636c-cloud1-1gpy146l61301e65-1300768879/lunbotu/lunbotu2.jpg",
+    "linkUrl": "",
+    "description": "第二张轮播图",
+    "sortOrder": 2,
+    "isActive": true,
+    "intervalTime": 5000,
+    "createdAt": 1728796800000,
+    "updatedAt": 1728796800000
+  },
+  {
+    "_id": "3",
+    "title": "轮播图3",
+    "imageUrl": "cloud://cloud1-1gpy146l61301e65.636c-cloud1-1gpy146l61301e65-1300768879/lunbotu/lunbotu4.jpg",
+    "linkUrl": "",
+    "description": "第三张轮播图",
+    "sortOrder": 3,
+    "isActive": true,
+    "intervalTime": 5000,
+    "createdAt": 1728796800000,
+    "updatedAt": 1728796800000
+  }
+]
+  
