@@ -232,10 +232,8 @@ export default function HomePage(props) {
     if (type === 'business') {
       switch (item) {
         case 'vehicle':
-          $w.utils.navigateTo({
-            pageId: 'https://cloud1-1gpy146l61301e65-1300768879.tcloudbaseapp.com/app-6s8hfp2p/production/',
-            params: {}
-          });
+          // 车辆管理：在新标签页中打开外部网站
+          window.open('https://cloud1-1gpy146l61301e65-1300768879.tcloudbaseapp.com/app-6s8hfp2p/production/', '_blank');
           break;
         case 'meeting':
           $w.utils.navigateTo({
