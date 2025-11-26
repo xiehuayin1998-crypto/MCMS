@@ -3,7 +3,7 @@ import React from 'react';
 // @ts-ignore;
 import { Card, CardContent, CardHeader, CardTitle, Badge, Button, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, useToast, Tabs, TabsContent, TabsList, TabsTrigger, Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui';
 // @ts-ignore;
-import { Calendar, Clock, Users, Building, AlertCircle, CheckCircle, XCircle, RefreshCw, Eye, MessageSquare, Filter, FileText, Shield, Key, ChevronDown, ChevronUp } from 'lucide-react';
+import { Calendar, Clock, Users, Building, AlertCircle, CheckCircle, XCircle, RefreshCw, Eye, MessageSquare, Filter, FileText, Shield, Key, ChevronDown, ChevronUp, User, Edit } from 'lucide-react';
 
 // @ts-ignore;
 import { UserHeader } from '@/components/UserHeader';
@@ -11,6 +11,8 @@ import { UserHeader } from '@/components/UserHeader';
 import { PermissionButton } from '@/components/PermissionButton';
 // @ts-ignore;
 import { PermissionUtils } from '@/components/PermissionGuard';
+// @ts-ignore;
+import { EmployeeEditDialog } from '@/components/EmployeeEditDialog';
 export default function PersonalDashboard(props) {
   const {
     $w,
@@ -30,6 +32,8 @@ export default function PersonalDashboard(props) {
   const [activeTab, setActiveTab] = React.useState('myBookings');
   const [hasMeetingManagementPermission, setHasMeetingManagementPermission] = React.useState(false);
   const [showDetailedPermissions, setShowDetailedPermissions] = React.useState(false);
+  const [editDialogOpen, setEditDialogOpen] = React.useState(false);
+  const [selectedEmployee, setSelectedEmployee] = React.useState(null);
 
   // 统计信息
   const [stats, setStats] = React.useState({
@@ -422,6 +426,32 @@ export default function PersonalDashboard(props) {
     }
   };
 
+  // 处理修改个人资料
+  const handleEditProfile = () => {
+    if (!currentUser) {
+      toast({
+        title: "操作失败",
+        description: "无法获取用户信息",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // 设置当前用户为编辑对象
+    setSelectedEmployee(currentUser);
+    setEditDialogOpen(true);
+  };
+
+  // 处理保存个人资料
+  const handleSaveProfile = async () => {
+    // 重新加载用户信息
+    await loadCurrentUser();
+    toast({
+      title: "保存成功",
+      description: "个人资料已更新"
+    });
+  };
+
   // 初始化加载
   React.useEffect(() => {
     const init = async () => {
@@ -454,10 +484,18 @@ export default function PersonalDashboard(props) {
     <UserHeader $w={$w} showHomeButton={true} />
     
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      {/* 页面标题 */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">个人工作台</h1>
-        <p className="text-gray-600">查看和管理您的会议室预约记录</p>
+      {/* 页面标题和操作按钮 */}
+      <div className="flex justify-between items-center mb-8">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">个人工作台</h1>
+          <p className="text-gray-600">查看和管理您的会议室预约记录</p>
+        </div>
+        <div className="flex space-x-3">
+          <Button variant="outline" onClick={handleEditProfile} className="flex items-center bg-blue-100 text-blue-800 hover:bg-blue-200">
+            <Edit className="w-4 h-4 mr-2" />
+            修改个人资料
+          </Button>
+        </div>
       </div>
 
       {/* 用户权限展示区域 - 详细展示 */}
@@ -755,6 +793,9 @@ export default function PersonalDashboard(props) {
             </Card>
           </TabsContent>}
       </Tabs>
+
+      {/* 修改个人资料对话框 */}
+      <EmployeeEditDialog open={editDialogOpen} onOpenChange={setEditDialogOpen} employee={selectedEmployee} onSave={handleSaveProfile} $w={$w} />
     </div>
   </div>;
 }
