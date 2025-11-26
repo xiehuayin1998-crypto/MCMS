@@ -9,7 +9,8 @@ export function ProfileEditDialog({
   open,
   onOpenChange,
   employee,
-  onSave
+  onSave,
+  $w
 }) {
   const [formData, setFormData] = useState({
     name: '',
@@ -352,6 +353,16 @@ export function ProfileEditDialog({
           delete updateData[key];
         }
       });
+
+      // 修复：确保filter参数正确设置
+      if (!employee || !employee._id) {
+        toast({
+          title: "操作失败",
+          description: "无法获取用户ID信息",
+          variant: "destructive"
+        });
+        return;
+      }
 
       // 更新用户信息
       await $w.cloud.callDataSource({
