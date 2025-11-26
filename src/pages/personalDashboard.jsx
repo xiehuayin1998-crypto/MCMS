@@ -12,7 +12,7 @@ import { PermissionButton } from '@/components/PermissionButton';
 // @ts-ignore;
 import { PermissionUtils } from '@/components/PermissionGuard';
 // @ts-ignore;
-import { EmployeeEditDialog } from '@/components/EmployeeEditDialog';
+import { ProfileEditDialog } from '@/components/ProfileEditDialog';
 export default function PersonalDashboard(props) {
   const {
     $w,
@@ -794,8 +794,8 @@ export default function PersonalDashboard(props) {
           </TabsContent>}
       </Tabs>
 
-      {/* 修改个人资料对话框 */}
-      <EmployeeEditDialog open={editDialogOpen} onOpenChange={setEditDialogOpen} employee={selectedEmployee} onSave={handleSaveProfile} $w={$w} />
+      {/* 修改个人资料对话框 - 使用新的ProfileEditDialog组件 */}
+      <ProfileEditDialog open={editDialogOpen} onOpenChange={setEditDialogOpen} employee={selectedEmployee} onSave={handleSaveProfile} $w={$w} />
     </div>
   </div>;
 }
