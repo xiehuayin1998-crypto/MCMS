@@ -49,6 +49,10 @@ export default function PersonalDashboard(props) {
       const storedUser = localStorage.getItem('currentUser');
       if (storedUser) {
         const userInfo = JSON.parse(storedUser);
+        // 确保用户信息包含 _id 字段
+        if (!userInfo._id && userInfo.userId) {
+          userInfo._id = userInfo.userId;
+        }
         setCurrentUser(userInfo);
         checkMeetingManagementPermission(userInfo);
         return userInfo;
@@ -72,9 +76,21 @@ export default function PersonalDashboard(props) {
         });
         if (result.records && result.records.length > 0) {
           const user = result.records[0];
+          // 确保用户对象包含 _id 字段
+          if (!user._id) {
+            console.error('用户数据缺少 _id 字段:', user);
+            toast({
+              title: "数据错误",
+              description: "用户数据不完整，请联系管理员",
+              variant: "destructive"
+            });
+            return null;
+          }
           setCurrentUser(user);
           checkMeetingManagementPermission(user);
           localStorage.setItem('currentUser', JSON.stringify({
+            _id: user._id,
+            // 确保包含 _id 字段
             userId: user._id,
             name: user.name,
             username: user.username,
@@ -432,6 +448,16 @@ export default function PersonalDashboard(props) {
       toast({
         title: "操作失败",
         description: "无法获取用户信息",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // 确保当前用户包含 _id 字段
+    if (!currentUser._id) {
+      toast({
+        title: "操作失败",
+        description: "用户ID信息不完整，请重新登录",
         variant: "destructive"
       });
       return;
