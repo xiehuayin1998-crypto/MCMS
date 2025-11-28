@@ -761,7 +761,7 @@ export function EmployeeEditDialog({
       </div>
     </div>;
   const renderRoleInfo = () => <div className="space-y-4">
-      <h3 className="text-lg font-semibold text-gray-900">角色权限</h3>
+      {/* <h3 className="text-lg font-semibold text-gray-900">角色权限</h3>
       <div>
         <Label>用户角色</Label>
         {rolesLoading ? <div className="flex items-center justify-center py-2">
@@ -780,7 +780,7 @@ export function EmployeeEditDialog({
           <input type="checkbox" checked={formData.isAdmin} onChange={e => handleInputChange('isAdmin', e.target.checked)} className="rounded border-gray-300" />
           <span className="text-sm">设为管理员</span>
         </label>
-      </div>
+      </div> */}
     </div>;
   return <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
