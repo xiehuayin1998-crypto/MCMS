@@ -123,7 +123,7 @@ export function PasswordChangeDialog({
         return;
       }
 
-      // 更新密码
+      // 更新密码 - 修复filter格式
       const updateResult = await $w.cloud.callDataSource({
         dataSourceName: 'mc_users',
         methodName: 'wedaUpdateV2',
