@@ -124,15 +124,16 @@ export function EmployeeTable({
   const renderExpandedDetails = employee => <div className="bg-gray-50 p-4 rounded-lg mt-2">
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
       <div>
-        <h4 className="font-semibold text-gray-700 mb-2">个人信息</h4>
+        <h4 className="font-semibold text-gray-700 mb-2">基本信息</h4>
         <div className="space-y-1">
+          <p><span className="text-gray-600">姓名：</span>{employee.name || '-'}</p>
+          <p><span className="text-gray-600">用户名：</span>{employee.username || '-'}</p>
           <p><span className="text-gray-600">性别：</span>{employee.sex || '-'}</p>
           <p><span className="text-gray-600">工号：</span>{employee.employee_number || '-'}</p>
           <p><span className="text-gray-600">类别：</span>{employee.employee_type || '-'}</p>
           <p><span className="text-gray-600">出生日期：</span>{formatDate(employee.birthday)}</p>
           <p><span className="text-gray-600">年龄：</span>{employee.age || '-'}</p>
           <p><span className="text-gray-600">籍贯：</span>{employee.birth_place || '-'}</p>
-          <p><span className="text-gray-600">政治面貌：</span>{employee.political_status || '-'}</p>
           <p><span className="text-gray-600">学历：</span>{employee.education || '-'}</p>
         </div>
       </div>
@@ -140,11 +141,11 @@ export function EmployeeTable({
         <h4 className="font-semibold text-gray-700 mb-2">工作信息</h4>
         <div className="space-y-1">
           <p><span className="text-gray-600">工作地：</span>{employee.Workplace || '-'}</p>
-          <p><span className="text-gray-600">墨西哥职位：</span>{employee.mexican_company_positions || '-'}</p>
-          <p><span className="text-gray-600">总部单位：</span>{employee.headquarters_location || '-'}</p>
-          <p><span className="text-gray-600">总部岗位：</span>{employee.original_position || '-'}</p>
+          <p><span className="text-gray-600">所属子公司：</span>{employee.company || '-'}</p>
+          <p><span className="text-gray-600">总部所属单位：</span>{employee.headquarters_location || '-'}</p>
+          <p><span className="text-gray-600">职位代码：</span>{employee.job_position_number || '-'}</p>
           <p><span className="text-gray-600">入司时间：</span>{formatDate(employee.join_date)}</p>
-          <p><span className="text-gray-600">层级：</span>{employee.hierarchy || '-'}</p>
+          <p><span className="text-gray-600">部门：</span>{employee.department || '-'}</p>
           <p><span className="text-gray-600">专业：</span>{employee.major || '-'}</p>
           <p><span className="text-gray-600">毕业院校：</span>{employee.graduation_institution || '-'}</p>
         </div>
@@ -153,20 +154,31 @@ export function EmployeeTable({
         <h4 className="font-semibold text-gray-700 mb-2">证件信息</h4>
         <div className="space-y-1">
           <p><span className="text-gray-600">身份证号：</span>{employee.ID_number ? '***' + employee.ID_number.slice(-4) : '-'}</p>
-          <p><span className="text-gray-600">职称：</span>{employee.job_title || '-'}</p>
-          <p><span className="text-gray-600">因公护照：</span>{employee.official_passport ? '***' + employee.official_passport.slice(-4) : '-'}</p>
-          <p><span className="text-gray-600">因私护照：</span>{employee.private_passport ? '***' + employee.private_passport.slice(-4) : '-'}</p>
-          <p><span className="text-gray-600">签证类型：</span>{employee.use_visa_type || '-'}</p>
-          <p><span className="text-gray-600">首次入境：</span>{formatDate(employee.first_date_mexico)}</p>
+          <p><span className="text-gray-600">社保号：</span>{employee.social_security_number ? '***' + employee.social_security_number.slice(-4) : '-'}</p>
+          <p><span className="text-gray-600">个人税号：</span>{employee.rfc ? '***' + employee.rfc.slice(-4) : '-'}</p>
+          <p><span className="text-gray-600">国籍：</span>{employee.country_of_citizenship || '-'}</p>
         </div>
       </div>
     </div>
     <div className="mt-4 pt-4 border-t">
       <h4 className="font-semibold text-gray-700 mb-2">联系信息</h4>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-        <p><span className="text-gray-600">国内地址：</span>{employee.permanent_address_china || '-'}</p>
-        <p><span className="text-gray-600">国内电话：</span>{employee.contact_number_china || '-'}</p>
-        <p><span className="text-gray-600">墨西哥电话：</span>{employee.contact_number_mexico || '-'}</p>
+        <p><span className="text-gray-600">墨西哥住宿地址：</span>{employee.address || '-'}</p>
+        <p><span className="text-gray-600">电话号码：</span>{employee.telephone_number || '-'}</p>
+        <p><span className="text-gray-600">邮件地址：</span>{employee.e_mail || '-'}</p>
+        <p><span className="text-gray-600">紧急联系人：</span>{employee.emergency_contact || '-'}</p>
+        <p><span className="text-gray-600">紧急联系人电话：</span>{employee.telephone_number_of_emergency_contact || '-'}</p>
+      </div>
+    </div>
+    <div className="mt-4 pt-4 border-t">
+      <h4 className="font-semibold text-gray-700 mb-2">权限信息</h4>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+        <p><span className="text-gray-600">是否管理员：</span>{employee.isAdmin ? '是' : '否'}</p>
+        <p><span className="text-gray-600">是否部长：</span>{employee.isMinister ? '是' : '否'}</p>
+        <p><span className="text-gray-600">角色：</span>{getRoleNames(employee.roles).join(', ') || '-'}</p>
+        <p><span className="text-gray-600">角色等级：</span>{Array.isArray(employee.roles_level) ? employee.roles_level.join(', ') : '-'}</p>
+        <p><span className="text-gray-600">功能导航顺序：</span>{employee.navigationOrder || '-'}</p>
+        <p><span className="text-gray-600">权限列表：</span>{employee.permissions || '-'}</p>
       </div>
     </div>
   </div>;
@@ -189,11 +201,11 @@ export function EmployeeTable({
             <TableHead className="min-w-[100px]">用户名</TableHead>
             <TableHead className="min-w-[100px]">工号</TableHead>
             <TableHead className="min-w-[60px]">性别</TableHead>
-            {/* <TableHead className="min-w-[100px]">类别</TableHead>
+            <TableHead className="min-w-[100px]">类别</TableHead>
             <TableHead className="min-w-[120px]">工作地</TableHead>
             <TableHead className="min-w-[100px]">部门</TableHead>
             <TableHead className="min-w-[150px]">角色</TableHead>
-            <TableHead className="min-w-[120px]">入司时间</TableHead> */}
+            <TableHead className="min-w-[120px]">入司时间</TableHead>
             <TableHead className="min-w-[100px]">操作</TableHead>
           </TableRow>
         </TableHeader>
@@ -220,6 +232,21 @@ export function EmployeeTable({
                     {employee.sex || '-'}
                   </Badge>
                 </TableCell>
+                <TableCell>
+                  <Badge variant="outline" className="text-xs">
+                    {employee.employee_type || '-'}
+                  </Badge>
+                </TableCell>
+                <TableCell>{employee.Workplace || '-'}</TableCell>
+                <TableCell>{employee.department || '-'}</TableCell>
+                <TableCell>
+                  <div className="flex flex-wrap gap-1">
+                    {roleNames.map((roleName, index) => <Badge key={index} variant="secondary" className="text-xs">
+                        {roleName}
+                      </Badge>)}
+                  </div>
+                </TableCell>
+                <TableCell>{formatDate(employee.join_date)}</TableCell>
                 <TableCell>
                   <div className="flex space-x-1">
                     <Button variant="ghost" size="sm" onClick={() => onEdit(employee)}>

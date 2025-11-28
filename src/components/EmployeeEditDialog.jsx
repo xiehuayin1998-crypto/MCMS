@@ -1,7 +1,7 @@
 // @ts-ignore;
 import React, { useState, useEffect } from 'react';
 // @ts-ignore;
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, Input, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Button, useToast } from '@/components/ui';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, Input, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Button, useToast, Checkbox } from '@/components/ui';
 // @ts-ignore;
 import { Loader2, Eye, EyeOff } from 'lucide-react';
 
@@ -14,47 +14,37 @@ export function EmployeeEditDialog({
   const [formData, setFormData] = useState({
     name: '',
     username: '',
-    department: '',
+    password: '',
+    isAdmin: false,
+    permissions: '',
     roles: [],
     roles_level: [],
-    isAdmin: false,
-    password: '',
-    // 新增字段
+    isMinister: false,
+    navigationOrder: '',
+    department: '',
     sex: '',
     employee_number: '',
     employee_type: '',
     Workplace: '',
-    mexican_company_positions: '',
+    company: '',
     headquarters_location: '',
-    original_position: '',
+    job_position_number: '',
     join_date: '',
     birthday: '',
     age: '',
     birth_place: '',
-    political_status: '',
+    social_security_number: '',
+    rfc: '',
     education: '',
     graduation_institution: '',
     major: '',
-    job_title: '',
-    job_title_date: '',
-    hierarchy: '',
-    hierarchy_date: '',
+    country_of_citizenship: '',
+    address: '',
+    telephone_number: '',
     ID_number: '',
-    official_passport: '',
-    official_passport_date: '',
-    private_passport: '',
-    private_passport_date: '',
-    use_visa_type: '',
-    visa_validity_period: '',
-    localization_expenses_time: '',
-    permanent_address_china: '',
-    contact_number_china: '',
-    contact_number_mexico: '',
-    first_date_mexico: '',
-    emergency_contact_name_china: '',
-    relationship_with_domestic_emergency_contacts: '',
-    emergency_contact_number_china: '',
-    birthdate: ''
+    e_mail: '',
+    emergency_contact: '',
+    telephone_number_of_emergency_contact: ''
   });
   const [roles, setRoles] = useState([]);
   const [departments, setDepartments] = useState([]);
@@ -163,6 +153,9 @@ export function EmployeeEditDialog({
           roles: Array.isArray(employee.roles) ? employee.roles.filter(id => typeof id === 'string') : [],
           roles_level: Array.isArray(employee.roles_level) ? employee.roles_level.filter(l => typeof l === 'number') : [],
           isAdmin: employee.isAdmin || false,
+          permissions: employee.permissions || '',
+          isMinister: employee.isMinister || false,
+          navigationOrder: employee.navigationOrder || '',
           password: '',
           // 编辑时不显示原密码
           // 新增字段初始化，日期字段需要从墨西哥时区恢复
@@ -170,37 +163,25 @@ export function EmployeeEditDialog({
           employee_number: employee.employee_number || '',
           employee_type: employee.employee_type || '',
           Workplace: employee.Workplace || '',
-          mexican_company_positions: employee.mexican_company_positions || '',
+          company: employee.company || '',
           headquarters_location: employee.headquarters_location || '',
-          original_position: employee.original_position || '',
+          job_position_number: employee.job_position_number || '',
           join_date: restoreDateFromMexico(employee.join_date) || '',
           birthday: restoreDateFromMexico(employee.birthday) || '',
           age: employee.age || '',
           birth_place: employee.birth_place || '',
-          political_status: employee.political_status || '',
+          social_security_number: employee.social_security_number || '',
+          rfc: employee.rfc || '',
           education: employee.education || '',
           graduation_institution: employee.graduation_institution || '',
           major: employee.major || '',
-          job_title: employee.job_title || '',
-          job_title_date: restoreDateFromMexico(employee.job_title_date) || '',
-          hierarchy: employee.hierarchy || '',
-          hierarchy_date: restoreDateFromMexico(employee.hierarchy_date) || '',
+          country_of_citizenship: employee.country_of_citizenship || '',
+          address: employee.address || '',
+          telephone_number: employee.telephone_number || '',
           ID_number: employee.ID_number || '',
-          official_passport: employee.official_passport || '',
-          official_passport_date: restoreDateFromMexico(employee.official_passport_date) || '',
-          private_passport: employee.private_passport || '',
-          private_passport_date: restoreDateFromMexico(employee.private_passport_date) || '',
-          use_visa_type: employee.use_visa_type || '',
-          visa_validity_period: restoreDateFromMexico(employee.visa_validity_period) || '',
-          localization_expenses_time: restoreDateFromMexico(employee.localization_expenses_time) || '',
-          permanent_address_china: employee.permanent_address_china || '',
-          contact_number_china: employee.contact_number_china || '',
-          contact_number_mexico: employee.contact_number_mexico || '',
-          first_date_mexico: restoreDateFromMexico(employee.first_date_mexico) || '',
-          emergency_contact_name_china: employee.emergency_contact_name_china || '',
-          relationship_with_domestic_emergency_contacts: employee.relationship_with_domestic_emergency_contacts || '',
-          emergency_contact_number_china: employee.emergency_contact_number_china || '',
-          birthdate: restoreDateFromMexico(employee.birthdate) || ''
+          e_mail: employee.e_mail || '',
+          emergency_contact: employee.emergency_contact || '',
+          telephone_number_of_emergency_contact: employee.telephone_number_of_emergency_contact || ''
         });
       } else {
         // 新建模式：使用当前日期
@@ -211,6 +192,9 @@ export function EmployeeEditDialog({
           roles: [],
           roles_level: [],
           isAdmin: false,
+          permissions: '',
+          isMinister: false,
+          navigationOrder: '',
           password: '123456',
           // 新增用户默认密码
           // 新增字段初始化
@@ -218,37 +202,25 @@ export function EmployeeEditDialog({
           employee_number: '',
           employee_type: '',
           Workplace: '',
-          mexican_company_positions: '',
+          company: '',
           headquarters_location: '',
-          original_position: '',
+          job_position_number: '',
           join_date: '',
           birthday: '',
           age: '',
           birth_place: '',
-          political_status: '',
+          social_security_number: '',
+          rfc: '',
           education: '',
           graduation_institution: '',
           major: '',
-          job_title: '',
-          job_title_date: '',
-          hierarchy: '',
-          hierarchy_date: '',
+          country_of_citizenship: '',
+          address: '',
+          telephone_number: '',
           ID_number: '',
-          official_passport: '',
-          official_passport_date: '',
-          private_passport: '',
-          private_passport_date: '',
-          use_visa_type: '',
-          visa_validity_period: '',
-          localization_expenses_time: '',
-          permanent_address_china: '',
-          contact_number_china: '',
-          contact_number_mexico: '',
-          first_date_mexico: '',
-          emergency_contact_name_china: '',
-          relationship_with_domestic_emergency_contacts: '',
-          emergency_contact_number_china: '',
-          birthdate: ''
+          e_mail: '',
+          emergency_contact: '',
+          telephone_number_of_emergency_contact: ''
         });
       }
       setErrors({});
@@ -305,8 +277,7 @@ export function EmployeeEditDialog({
     setFormData({
       ...formData,
       birthday: value,
-      age: age,
-      birthdate: value
+      age: age
     });
   };
 
@@ -315,13 +286,6 @@ export function EmployeeEditDialog({
     if (!idCard) return true;
     const regex = /(^\d{15}$)|(^\d{18}$)|(^\d{17}(\d|X|x)$)/;
     return regex.test(idCard);
-  };
-
-  // 验证手机号
-  const validatePhone = phone => {
-    if (!phone) return true;
-    const regex = /^1[3-9]\d{9}$/;
-    return regex.test(phone);
   };
 
   // 验证密码
@@ -365,37 +329,13 @@ export function EmployeeEditDialog({
       newErrors.ID_number = '身份证号格式不正确';
     }
 
-    // 手机号验证
-    if (formData.contact_number_china && !validatePhone(formData.contact_number_china)) {
-      newErrors.contact_number_china = '国内手机号格式不正确';
-    }
-    if (formData.contact_number_mexico && !/^\d{7,15}$/.test(formData.contact_number_mexico)) {
-      newErrors.contact_number_mexico = '墨西哥电话格式不正确';
-    }
-    if (formData.emergency_contact_number_china && !validatePhone(formData.emergency_contact_number_china)) {
-      newErrors.emergency_contact_number_china = '紧急联系人电话格式不正确';
-    }
-
     // 日期验证
-    const dateFields = ['join_date', 'birthday', 'job_title_date', 'hierarchy_date', 'official_passport_date', 'private_passport_date', 'visa_validity_period', 'localization_expenses_time', 'first_date_mexico', 'birthdate'];
+    const dateFields = ['join_date', 'birthday'];
     dateFields.forEach(field => {
       if (formData[field] && !validateDate(formData[field])) {
         newErrors[field] = '日期格式不正确';
       }
     });
-
-    // 护照号验证
-    if (formData.official_passport && !/^[A-Z0-9]{5,15}$/.test(formData.official_passport)) {
-      newErrors.official_passport = '护照号格式不正确';
-    }
-    if (formData.private_passport && !/^[A-Z0-9]{5,15}$/.test(formData.private_passport)) {
-      newErrors.private_passport = '护照号格式不正确';
-    }
-
-    // 工号验证
-    if (formData.employee_number && !/^[A-Z0-9-]{1,20}$/.test(formData.employee_number)) {
-      newErrors.employee_number = '工号格式不正确';
-    }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -460,6 +400,9 @@ export function EmployeeEditDialog({
         roles: formData.roles.filter(id => typeof id === 'string'),
         roles_level: formData.roles_level.filter(l => typeof l === 'number'),
         isAdmin: Boolean(formData.isAdmin),
+        permissions: formData.permissions || '',
+        isMinister: Boolean(formData.isMinister),
+        navigationOrder: formData.navigationOrder || '',
         // 仅在新增或修改密码时包含密码字段
         ...(formData.password && {
           password: formData.password
@@ -469,37 +412,25 @@ export function EmployeeEditDialog({
         employee_number: formData.employee_number.trim(),
         employee_type: formData.employee_type || '',
         Workplace: formData.Workplace.trim(),
-        mexican_company_positions: formData.mexican_company_positions.trim(),
+        company: formData.company.trim(),
         headquarters_location: formData.headquarters_location.trim(),
-        original_position: formData.original_position.trim(),
+        job_position_number: formData.job_position_number.trim(),
         birth_place: formData.birth_place.trim(),
-        political_status: formData.political_status || '',
+        social_security_number: formData.social_security_number.trim(),
+        rfc: formData.rfc.trim(),
         education: formData.education || '',
         graduation_institution: formData.graduation_institution.trim(),
         major: formData.major.trim(),
-        job_title: formData.job_title.trim(),
-        hierarchy: formData.hierarchy.trim(),
+        country_of_citizenship: formData.country_of_citizenship || '',
+        address: formData.address.trim(),
+        telephone_number: formData.telephone_number.trim(),
         ID_number: formData.ID_number.trim(),
-        official_passport: formData.official_passport.trim(),
-        private_passport: formData.private_passport.trim(),
-        use_visa_type: formData.use_visa_type || '',
-        permanent_address_china: formData.permanent_address_china.trim(),
-        contact_number_china: formData.contact_number_china.trim(),
-        contact_number_mexico: formData.contact_number_mexico.trim(),
-        emergency_contact_name_china: formData.emergency_contact_name_china.trim(),
-        relationship_with_domestic_emergency_contacts: formData.relationship_with_domestic_emergency_contacts.trim(),
-        emergency_contact_number_china: formData.emergency_contact_number_china.trim(),
+        e_mail: formData.e_mail.trim(),
+        emergency_contact: formData.emergency_contact.trim(),
+        telephone_number_of_emergency_contact: formData.telephone_number_of_emergency_contact.trim(),
         // 日期字段 - 调整为墨西哥时区（向后移动一天）
         join_date: formData.join_date ? adjustDateForMexico(formData.join_date) : null,
         birthday: formData.birthday ? adjustDateForMexico(formData.birthday) : null,
-        job_title_date: formData.job_title_date ? adjustDateForMexico(formData.job_title_date) : null,
-        hierarchy_date: formData.hierarchy_date ? adjustDateForMexico(formData.hierarchy_date) : null,
-        official_passport_date: formData.official_passport_date ? adjustDateForMexico(formData.official_passport_date) : null,
-        private_passport_date: formData.private_passport_date ? adjustDateForMexico(formData.private_passport_date) : null,
-        visa_validity_period: formData.visa_validity_period ? adjustDateForMexico(formData.visa_validity_period) : null,
-        localization_expenses_time: formData.localization_expenses_time ? adjustDateForMexico(formData.localization_expenses_time) : null,
-        first_date_mexico: formData.first_date_mexico ? adjustDateForMexico(formData.first_date_mexico) : null,
-        birthdate: formData.birthdate ? adjustDateForMexico(formData.birthdate) : null,
         // 数字字段
         age: formData.age ? parseInt(formData.age) : null
       };
@@ -660,12 +591,10 @@ export function EmployeeEditDialog({
       <h3 className="text-lg font-semibold text-gray-900">工作信息</h3>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {renderInput('Workplace', '工作地', 'text', '请输入工作地')}
-        {renderInput('mexican_company_positions', '墨西哥公司职位', 'text', '请输入墨西哥公司职位')}
+        {renderInput('company', '所属子公司', 'text', '请输入所属子公司')}
         {renderInput('headquarters_location', '总部所属单位', 'text', '请输入总部所属单位')}
-        {renderInput('original_position', '总部或原总部岗位', 'text', '请输入总部或原总部岗位')}
+        {renderInput('job_position_number', '职位代码', 'text', '请输入职位代码')}
         {renderDateInput('join_date', '入司时间')}
-        {renderInput('hierarchy', '层级', 'text', '请输入层级')}
-        {renderDateInput('hierarchy_date', '当前层级聘用时间')}
       </div>
     </div>;
   const renderPersonalInfo = () => <div className="space-y-4">
@@ -676,21 +605,7 @@ export function EmployeeEditDialog({
           <Label>年龄</Label>
           <Input value={formData.age || ''} readOnly className="bg-gray-50" placeholder="自动计算" />
         </div>
-        {renderDateInput('birthdate', '生日')}
         {renderInput('birth_place', '籍贯', 'text', '请输入籍贯')}
-        {renderSelect('political_status', '政治面貌', [{
-        value: '群众',
-        label: '群众'
-      }, {
-        value: '共青团员',
-        label: '共青团员'
-      }, {
-        value: '中共党员',
-        label: '中共党员'
-      }, {
-        value: '民主党派',
-        label: '民主党派'
-      }])}
         {renderSelect('education', '学历', [{
         value: '高中',
         label: '高中'
@@ -709,78 +624,65 @@ export function EmployeeEditDialog({
       }])}
         {renderInput('graduation_institution', '毕业院校', 'text', '请输入毕业院校')}
         {renderInput('major', '专业', 'text', '请输入专业')}
-      </div>
-    </div>;
-  const renderProfessionalInfo = () => <div className="space-y-4">
-      <h3 className="text-lg font-semibold text-gray-900">职称信息</h3>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {renderInput('job_title', '职称', 'text', '请输入职称')}
-        {renderDateInput('job_title_date', '当前职称/技能等级聘用时间')}
+        {renderSelect('country_of_citizenship', '国籍', [{
+        value: '中国',
+        label: '中国'
+      }, {
+        value: '墨西哥',
+        label: '墨西哥'
+      }, {
+        value: '美国',
+        label: '美国'
+      }, {
+        value: '其他',
+        label: '其他'
+      }])}
       </div>
     </div>;
   const renderDocumentInfo = () => <div className="space-y-4">
       <h3 className="text-lg font-semibold text-gray-900">证件信息</h3>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {renderInput('ID_number', '身份证号', 'text', '请输入身份证号')}
-        {renderInput('official_passport', '因公护照号', 'text', '请输入因公护照号')}
-        {renderDateInput('official_passport_date', '因公护照有效期')}
-        {renderInput('private_passport', '因私护照号', 'text', '请输入因私护照号')}
-        {renderDateInput('private_passport_date', '因私护照到期时间')}
-        {renderSelect('use_visa_type', '使用签证类型', [{
-        value: '商务签证',
-        label: '商务签证'
-      }, {
-        value: '工作签证',
-        label: '工作签证'
-      }, {
-        value: '旅游签证',
-        label: '旅游签证'
-      }, {
-        value: '学生签证',
-        label: '学生签证'
-      }])}
-        {renderDateInput('visa_validity_period', '签证有效期')}
+        {renderInput('social_security_number', '社保号', 'text', '请输入社保号')}
+        {renderInput('rfc', '个人税号', 'text', '请输入个人税号')}
       </div>
     </div>;
   const renderContactInfo = () => <div className="space-y-4">
       <h3 className="text-lg font-semibold text-gray-900">联系信息</h3>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {renderInput('permanent_address_china', '国内常住地址', 'text', '请输入国内常住地址')}
-        {renderInput('contact_number_china', '国内联系电话', 'text', '请输入国内联系电话')}
-        {renderInput('contact_number_mexico', '墨西哥联系电话', 'text', '请输入墨西哥联系电话')}
-        {renderDateInput('first_date_mexico', '首次入境墨西哥时间')}
-        {renderDateInput('localization_expenses_time', '本地化开支时间')}
+        {renderInput('address', '墨西哥住宿地址', 'text', '请输入墨西哥住宿地址')}
+        {renderInput('telephone_number', '电话号码', 'text', '请输入电话号码')}
+        {renderInput('e_mail', '邮件地址', 'email', '请输入邮件地址')}
+        {renderInput('emergency_contact', '紧急联系人', 'text', '请输入紧急联系人')}
+        {renderInput('telephone_number_of_emergency_contact', '紧急联系人电话', 'text', '请输入紧急联系人电话')}
       </div>
     </div>;
-  const renderEmergencyContact = () => <div className="space-y-4">
-      <h3 className="text-lg font-semibold text-gray-900">紧急联系人</h3>
+  const renderPermissionInfo = () => <div className="space-y-4">
+      <h3 className="text-lg font-semibold text-gray-900">权限信息</h3>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {renderInput('emergency_contact_name_china', '国内紧急联系人姓名', 'text', '请输入紧急联系人姓名')}
-        {renderInput('relationship_with_domestic_emergency_contacts', '与国内紧急联系人的关系', 'text', '请输入关系')}
-        {renderInput('emergency_contact_number_china', '国内紧急联系人电话', 'text', '请输入紧急联系人电话')}
+        <div className="flex items-center space-x-2">
+          <Checkbox checked={formData.isAdmin} onCheckedChange={checked => handleInputChange('isAdmin', checked)} />
+          <Label>是否管理员</Label>
+        </div>
+        <div className="flex items-center space-x-2">
+          <Checkbox checked={formData.isMinister} onCheckedChange={checked => handleInputChange('isMinister', checked)} />
+          <Label>是否部长</Label>
+        </div>
+        {renderInput('permissions', '权限列表', 'text', '请输入权限列表（逗号分隔）')}
+        {renderInput('navigationOrder', '功能导航顺序', 'text', '请输入功能导航顺序')}
       </div>
-    </div>;
-  const renderRoleInfo = () => <div className="space-y-4">
-      {/* <h3 className="text-lg font-semibold text-gray-900">角色权限</h3>
       <div>
         <Label>用户角色</Label>
         {rolesLoading ? <div className="flex items-center justify-center py-2">
             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
             <span className="ml-2 text-sm text-gray-500">加载中...</span>
-          </div> : roles.length > 0 ? <div className="space-y-2">
+          </div> : roles.length > 0 ? <div className="space-y-2 mt-2">
             {roles.map(role => <label key={role._id} className="flex items-center space-x-2">
                 <input type="checkbox" checked={formData.roles.includes(role._id)} onChange={e => handleRoleChange(role._id, e.target.checked)} className="rounded border-gray-300" />
                 <span className="text-sm">{role.roleName} (等级: {role.level || 0})</span>
               </label>)}
           </div> : <div className="text-sm text-gray-500 py-2">暂无可用角色</div>}
       </div>
-      <div>
-        <Label>管理员权限</Label>
-        <label className="flex items-center space-x-2">
-          <input type="checkbox" checked={formData.isAdmin} onChange={e => handleInputChange('isAdmin', e.target.checked)} className="rounded border-gray-300" />
-          <span className="text-sm">设为管理员</span>
-        </label>
-      </div> */}
     </div>;
   return <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -792,11 +694,9 @@ export function EmployeeEditDialog({
           {renderBasicInfo()}
           {renderWorkInfo()}
           {renderPersonalInfo()}
-          {renderProfessionalInfo()}
           {renderDocumentInfo()}
           {renderContactInfo()}
-          {renderEmergencyContact()}
-          {renderRoleInfo()}
+          {renderPermissionInfo()}
         </div>
 
         <DialogFooter>
