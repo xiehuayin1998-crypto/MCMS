@@ -222,26 +222,26 @@ export function EmployeeTable({
                     {employee.employee_number || '-'}
                   </Badge>
                 </TableCell>
-                <TableCell>
+                {/* <TableCell>
                   <Badge variant="secondary" className="text-xs">
                     {employee.sex || '-'}
                   </Badge>
-                </TableCell>
-                <TableCell>
+                </TableCell> */}
+                {/* <TableCell>
                   <Badge variant="outline" className="text-xs">
                     {employee.employee_type || '-'}
                   </Badge>
-                </TableCell>
-                <TableCell>{employee.Workplace || '-'}</TableCell>
+                </TableCell> */}
+                {/* <TableCell>{employee.Workplace || '-'}</TableCell> */}
                 <TableCell>{employee.department || '-'}</TableCell>
-                <TableCell>
+                {/* <TableCell>
                   <div className="flex flex-wrap gap-1">
                     {roleNames.map((roleName, index) => <Badge key={index} variant="secondary" className="text-xs">
-                        {roleName}
-                      </Badge>)}
+                      {roleName}
+                    </Badge>)}
                   </div>
-                </TableCell>
-                <TableCell>{formatDate(employee.join_date)}</TableCell>
+                </TableCell> */}
+                {/* <TableCell>{formatDate(employee.join_date)}</TableCell>
                 <TableCell>
                   <div className="flex space-x-1">
                     <Button variant="ghost" size="sm" onClick={() => onEdit(employee)}>
@@ -251,7 +251,7 @@ export function EmployeeTable({
                       <Trash2 className="w-4 h-4" />
                     </Button>
                   </div>
-                </TableCell>
+                </TableCell> */}
               </TableRow>
               {isExpanded && <TableRow>
                 <TableCell colSpan={11} className="p-0">
