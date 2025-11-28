@@ -545,10 +545,10 @@ export function EmployeeEditDialog({
       {renderInput('username', '用户名 *')}
       {renderInput('employee_number', '工号', 'text', '请输入工号')}
       {renderSelect('sex', '性别', [{
-        value: '男',
+        value: 'M',
         label: '男'
       }, {
-        value: '女',
+        value: 'F',
         label: '女'
       }])}
       <div>
@@ -565,19 +565,6 @@ export function EmployeeEditDialog({
           </SelectContent>
         </Select>
       </div>
-      {renderSelect('employee_type', '类别', [{
-        value: '正式员工',
-        label: '正式员工'
-      }, {
-        value: '实习生',
-        label: '实习生'
-      }, {
-        value: '外派员工',
-        label: '外派员工'
-      }, {
-        value: '合同工',
-        label: '合同工'
-      }])}
       {employee ? <div>
         <Label>密码（留空不修改）</Label>
         {renderInput('password', '密码', 'password', '请输入新密码，留空不修改')}
@@ -656,33 +643,6 @@ export function EmployeeEditDialog({
       {renderInput('emergency_contact', '紧急联系人', 'text', '请输入紧急联系人')}
       {renderInput('telephone_number_of_emergency_contact', '紧急联系人电话', 'text', '请输入紧急联系人电话')}
     </div>
-  </div>;
-  const renderPermissionInfo = () => <div className="space-y-4">
-    <h3 className="text-lg font-semibold text-gray-900">权限信息</h3>
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        // <div className="flex items-center space-x-2">
-        //   <Checkbox checked={formData.isAdmin} onCheckedChange={checked => handleInputChange('isAdmin', checked)} />
-        //   <Label>是否管理员</Label>
-        // </div>
-        // <div className="flex items-center space-x-2">
-        //   <Checkbox checked={formData.isMinister} onCheckedChange={checked => handleInputChange('isMinister', checked)} />
-        //   <Label>是否部长</Label>
-        // </div>
-      // {renderInput('permissions', '权限列表', 'text', '请输入权限列表（逗号分隔）')}
-      // {renderInput('navigationOrder', '功能导航顺序', 'text', '请输入功能导航顺序')}
-    </div>
-      // <div>
-      //   <Label>用户角色</Label>
-      //   {rolesLoading ? <div className="flex items-center justify-center py-2">
-      //       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-      //       <span className="ml-2 text-sm text-gray-500">加载中...</span>
-      //     </div> : roles.length > 0 ? <div className="space-y-2 mt-2">
-      //       {roles.map(role => <label key={role._id} className="flex items-center space-x-2">
-      //           <input type="checkbox" checked={formData.roles.includes(role._id)} onChange={e => handleRoleChange(role._id, e.target.checked)} className="rounded border-gray-300" />
-      //           <span className="text-sm">{role.roleName} (等级: {role.level || 0})</span>
-      //         </label>)}
-      //     </div> : <div className="text-sm text-gray-500 py-2">暂无可用角色</div>}
-      // </div>
   </div>;
   return <Dialog open={open} onOpenChange={onOpenChange}>
     <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
