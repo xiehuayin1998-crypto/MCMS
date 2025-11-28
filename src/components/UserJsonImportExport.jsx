@@ -1,7 +1,7 @@
 // @ts-ignore;
 import React, { useState } from 'react';
 // @ts-ignore;
-import { Button, Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, useToast, Card, CardContent, CardHeader, CardTitle, Tabs, TabsContent, TabsList, TabsTrigger, Input, Label, Badge, Textarea } from '@/components/ui';
+import { Button, Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, useToast, Card, CardContent, CardHeader, CardTitle, Tabs, TabsContent, TabsList, TabsTrigger, Input, Label, Badge, Textarea } from '@/components/ui';
 // @ts-ignore;
 import { Download, Upload, FileText, X, CheckCircle, AlertCircle, FileCode, Copy } from 'lucide-react';
 
@@ -21,50 +21,44 @@ export function UserJsonImportExport({
     toast
   } = useToast();
 
-  // 下载JSON模板（完全避免中文编码问题）
+  // 下载JSON模板（根据最新数据模型）
   const downloadTemplate = () => {
     try {
-      // 创建JSON模板数据
+      // 创建JSON模板数据，完全匹配最新的数据模型字段
       const templateData = [{
         name: "张三",
         username: "zhangsan",
         password: "123456",
+        isAdmin: false,
+        permissions: "",
+        roles: ["user"],
+        roles_level: [1],
+        isMinister: false,
+        navigationOrder: "",
         department: "技术部",
         sex: "男",
         employee_number: "EMP001",
         employee_type: "正式员工",
         Workplace: "墨西哥城",
-        mexican_company_positions: "软件工程师",
+        company: "墨西哥轨道交通装备有限公司",
         headquarters_location: "北京总部",
-        original_position: "高级工程师",
+        job_position_number: "POS001",
         join_date: "2023-01-15",
         birthday: "1990-05-20",
         age: 33,
         birth_place: "北京市",
-        political_status: "群众",
+        social_security_number: "SSN001",
+        rfc: "RFC001",
         education: "本科",
         graduation_institution: "清华大学",
         major: "计算机科学",
-        job_title: "高级工程师",
-        job_title_date: "2022-06-01",
-        hierarchy: "P7",
-        hierarchy_date: "2022-06-01",
+        country_of_citizenship: "中国",
+        address: "墨西哥城某街道123号",
+        telephone_number: "+52-55-1234-5678",
         ID_number: "110101199005201234",
-        official_passport: "E12345678",
-        official_passport_date: "2025-12-31",
-        private_passport: "P87654321",
-        private_passport_date: "2025-12-31",
-        use_visa_type: "工作签证",
-        visa_validity_period: "2024-12-31",
-        localization_expenses_time: "2023-02-01",
-        permanent_address_china: "北京市朝阳区",
-        contact_number_china: "13800138000",
-        contact_number_mexico: "+52-55-1234-5678",
-        first_date_mexico: "2023-01-20",
-        emergency_contact_name_china: "李四",
-        relationship_with_domestic_emergency_contacts: "配偶",
-        emergency_contact_number_china: "13900139000",
-        birthdate: "05-20"
+        e_mail: "zhangsan@example.com",
+        emergency_contact: "李四",
+        telephone_number_of_emergency_contact: "13900139000"
       }];
       const jsonContent = JSON.stringify(templateData, null, 2);
       const blob = new Blob([jsonContent], {
@@ -81,7 +75,7 @@ export function UserJsonImportExport({
       URL.revokeObjectURL(url);
       toast({
         title: "下载成功",
-        description: "JSON模板已下载，完美支持中文"
+        description: "JSON模板已下载，完全匹配最新数据模型"
       });
     } catch (error) {
       console.error('下载模板失败:', error);
@@ -133,7 +127,7 @@ export function UserJsonImportExport({
       URL.revokeObjectURL(url);
       toast({
         title: "导出成功",
-        description: `已导出 ${users.length} 条用户数据，使用JSON格式完美支持中文`
+        description: `已导出 ${users.length} 条用户数据，使用JSON格式`
       });
     } catch (error) {
       console.error('导出用户数据失败:', error);
@@ -259,47 +253,41 @@ export function UserJsonImportExport({
             continue;
           }
 
-          // 准备用户数据
+          // 准备用户数据，完全匹配数据模型字段
           const userToCreate = {
             name: userData.name || '',
             username: userData.username || '',
             password: userData.password || '123456',
+            isAdmin: userData.isAdmin || false,
+            permissions: userData.permissions || '',
+            roles: userData.roles || ['user'],
+            roles_level: userData.roles_level || [1],
+            isMinister: userData.isMinister || false,
+            navigationOrder: userData.navigationOrder || '',
             department: userData.department || '',
             sex: userData.sex || '',
             employee_number: userData.employee_number || '',
             employee_type: userData.employee_type || '',
             Workplace: userData.Workplace || '',
-            mexican_company_positions: userData.mexican_company_positions || '',
+            company: userData.company || '',
             headquarters_location: userData.headquarters_location || '',
-            original_position: userData.original_position || '',
+            job_position_number: userData.job_position_number || '',
             join_date: userData.join_date || '',
             birthday: userData.birthday || '',
             age: userData.age ? parseInt(userData.age) : null,
             birth_place: userData.birth_place || '',
-            political_status: userData.political_status || '',
+            social_security_number: userData.social_security_number || '',
+            rfc: userData.rfc || '',
             education: userData.education || '',
             graduation_institution: userData.graduation_institution || '',
             major: userData.major || '',
-            job_title: userData.job_title || '',
-            job_title_date: userData.job_title_date || '',
-            hierarchy: userData.hierarchy || '',
-            hierarchy_date: userData.hierarchy_date || '',
+            country_of_citizenship: userData.country_of_citizenship || '',
+            address: userData.address || '',
+            telephone_number: userData.telephone_number || '',
             ID_number: userData.ID_number || '',
-            official_passport: userData.official_passport || '',
-            official_passport_date: userData.official_passport_date || '',
-            private_passport: userData.private_passport || '',
-            private_passport_date: userData.private_passport_date || '',
-            use_visa_type: userData.use_visa_type || '',
-            visa_validity_period: userData.visa_validity_period || '',
-            localization_expenses_time: userData.localization_expenses_time || '',
-            permanent_address_china: userData.permanent_address_china || '',
-            contact_number_china: userData.contact_number_china || '',
-            contact_number_mexico: userData.contact_number_mexico || '',
-            first_date_mexico: userData.first_date_mexico || '',
-            emergency_contact_name_china: userData.emergency_contact_name_china || '',
-            relationship_with_domestic_emergency_contacts: userData.relationship_with_domestic_emergency_contacts || '',
-            emergency_contact_number_china: userData.emergency_contact_number_china || '',
-            birthdate: userData.birthdate || ''
+            e_mail: userData.e_mail || '',
+            emergency_contact: userData.emergency_contact || '',
+            telephone_number_of_emergency_contact: userData.telephone_number_of_emergency_contact || ''
           };
 
           // 创建用户
@@ -369,7 +357,12 @@ export function UserJsonImportExport({
       name: "张三",
       username: "zhangsan",
       password: "123456",
-      department: "技术部"
+      department: "技术部",
+      sex: "男",
+      employee_number: "EMP001",
+      employee_type: "正式员工",
+      Workplace: "墨西哥城",
+      company: "墨西哥轨道交通装备有限公司"
     }];
     const jsonText = JSON.stringify(templateData, null, 2);
     navigator.clipboard.writeText(jsonText).then(() => {
@@ -409,10 +402,10 @@ export function UserJsonImportExport({
         <DialogHeader>
           <DialogTitle className="flex items-center">
             <FileCode className="w-6 h-6 mr-2 text-blue-600" />
-            用户批量操作 - JSON格式（中文完美支持）
+            用户批量操作 - JSON格式
           </DialogTitle>
           <DialogDescription>
-            使用JSON格式完全避免中文编码问题，支持文件导入和文本粘贴两种方式
+            使用JSON格式导入导出用户数据，完全匹配最新数据模型
           </DialogDescription>
         </DialogHeader>
 
@@ -471,7 +464,7 @@ export function UserJsonImportExport({
               <CardContent className="space-y-6">
                 <div className="space-y-2">
                   <Label>下载JSON模板</Label>
-                  <p className="text-sm text-gray-600">JSON格式完全避免中文编码问题</p>
+                  <p className="text-sm text-gray-600">模板已根据最新数据模型更新，包含所有可用字段</p>
                   <Button onClick={downloadTemplate} variant="outline" className="w-full border-green-200 hover:bg-green-50">
                     <Download className="w-4 h-4 mr-2" />
                     下载JSON模板
@@ -511,7 +504,9 @@ export function UserJsonImportExport({
     "name": "张三",
     "username": "zhangsan",
     "password": "123456",
-    "department": "技术部"
+    "department": "技术部",
+    "sex": "男",
+    "employee_number": "EMP001"
   }
 ]`} rows={8} className="font-mono text-sm" />
                 </div>
@@ -564,8 +559,8 @@ export function UserJsonImportExport({
               </CardHeader>
               <CardContent className="space-y-4">
                 <p className="text-sm text-gray-600">
-                  导出所有用户数据为JSON格式，完全避免中文编码问题。
-                  JSON格式更易于编辑和处理，支持各种编程语言。
+                  导出所有用户数据为JSON格式，包含所有字段信息。
+                  JSON格式便于数据交换和备份。
                 </p>
                 <Button onClick={exportUsers} disabled={exporting} className="w-full bg-blue-600 hover:bg-blue-700">
                   {exporting ? <>
@@ -580,8 +575,6 @@ export function UserJsonImportExport({
             </Card>
           </TabsContent>
         </Tabs>
-
-        {/* 移除底部的DialogFooter，因为按钮已经移动到顶部 */}
       </DialogContent>
     </Dialog>;
 }
