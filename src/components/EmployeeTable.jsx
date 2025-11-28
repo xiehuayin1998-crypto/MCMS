@@ -132,7 +132,6 @@ export function EmployeeTable({
           <p><span className="text-gray-600">工号：</span>{employee.employee_number || '-'}</p>
           <p><span className="text-gray-600">出生日期：</span>{formatDate(employee.birthday)}</p>
           <p><span className="text-gray-600">年龄：</span>{employee.age || '-'}</p>
-          <p><span className="text-gray-600">籍贯：</span>{employee.birth_place || '-'}</p>
           <p><span className="text-gray-600">学历：</span>{employee.education || '-'}</p>
         </div>
       </div>
@@ -141,7 +140,6 @@ export function EmployeeTable({
         <div className="space-y-1">
           <p><span className="text-gray-600">工作地：</span>{employee.Workplace || '-'}</p>
           <p><span className="text-gray-600">所属子公司：</span>{employee.company || '-'}</p>
-          <p><span className="text-gray-600">总部所属单位：</span>{employee.headquarters_location || '-'}</p>
           <p><span className="text-gray-600">职位代码：</span>{employee.job_position_number || '-'}</p>
           <p><span className="text-gray-600">入司时间：</span>{formatDate(employee.join_date)}</p>
           <p><span className="text-gray-600">部门：</span>{employee.department || '-'}</p>
