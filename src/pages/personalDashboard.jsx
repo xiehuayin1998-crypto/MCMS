@@ -3,7 +3,7 @@ import React from 'react';
 // @ts-ignore;
 import { Card, CardContent, CardHeader, CardTitle, Badge, Button, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, useToast, Tabs, TabsContent, TabsList, TabsTrigger, Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui';
 // @ts-ignore;
-import { Calendar, Clock, Users, Building, AlertCircle, CheckCircle, XCircle, RefreshCw, Eye, MessageSquare, Filter, FileText, Shield, Key, ChevronDown, ChevronUp, User, Edit } from 'lucide-react';
+import { Calendar, Clock, Users, Building, AlertCircle, CheckCircle, XCircle, RefreshCw, Eye, MessageSquare, Filter, FileText, Shield, Key, ChevronDown, ChevronUp, Lock } from 'lucide-react';
 
 // @ts-ignore;
 import { UserHeader } from '@/components/UserHeader';
@@ -12,7 +12,7 @@ import { PermissionButton } from '@/components/PermissionButton';
 // @ts-ignore;
 import { PermissionUtils } from '@/components/PermissionGuard';
 // @ts-ignore;
-import { ProfileEditDialog } from '@/components/ProfileEditDialog';
+import { PasswordChangeDialog } from '@/components/PasswordChangeDialog';
 export default function PersonalDashboard(props) {
   const {
     $w,
@@ -32,8 +32,7 @@ export default function PersonalDashboard(props) {
   const [activeTab, setActiveTab] = React.useState('myBookings');
   const [hasMeetingManagementPermission, setHasMeetingManagementPermission] = React.useState(false);
   const [showDetailedPermissions, setShowDetailedPermissions] = React.useState(false);
-  const [editDialogOpen, setEditDialogOpen] = React.useState(false);
-  const [selectedEmployee, setSelectedEmployee] = React.useState(null);
+  const [showPasswordDialog, setShowPasswordDialog] = React.useState(false);
 
   // 统计信息
   const [stats, setStats] = React.useState({
@@ -49,10 +48,6 @@ export default function PersonalDashboard(props) {
       const storedUser = localStorage.getItem('currentUser');
       if (storedUser) {
         const userInfo = JSON.parse(storedUser);
-        // 确保用户信息包含 _id 字段
-        if (!userInfo._id && userInfo.userId) {
-          userInfo._id = userInfo.userId;
-        }
         setCurrentUser(userInfo);
         checkMeetingManagementPermission(userInfo);
         return userInfo;
@@ -76,21 +71,9 @@ export default function PersonalDashboard(props) {
         });
         if (result.records && result.records.length > 0) {
           const user = result.records[0];
-          // 确保用户对象包含 _id 字段
-          if (!user._id) {
-            console.error('用户数据缺少 _id 字段:', user);
-            toast({
-              title: "数据错误",
-              description: "用户数据不完整，请联系管理员",
-              variant: "destructive"
-            });
-            return null;
-          }
           setCurrentUser(user);
           checkMeetingManagementPermission(user);
           localStorage.setItem('currentUser', JSON.stringify({
-            _id: user._id,
-            // 确保包含 _id 字段
             userId: user._id,
             name: user.name,
             username: user.username,
@@ -442,40 +425,14 @@ export default function PersonalDashboard(props) {
     }
   };
 
-  // 处理修改个人资料
-  const handleEditProfile = () => {
-    if (!currentUser) {
-      toast({
-        title: "操作失败",
-        description: "无法获取用户信息",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    // 确保当前用户包含 _id 字段
-    if (!currentUser._id) {
-      toast({
-        title: "操作失败",
-        description: "用户ID信息不完整，请重新登录",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    // 设置当前用户为编辑对象
-    setSelectedEmployee(currentUser);
-    setEditDialogOpen(true);
+  // 打开修改密码对话框
+  const handleOpenPasswordDialog = () => {
+    setShowPasswordDialog(true);
   };
 
-  // 处理保存个人资料
-  const handleSaveProfile = async () => {
-    // 重新加载用户信息
-    await loadCurrentUser();
-    toast({
-      title: "保存成功",
-      description: "个人资料已更新"
-    });
+  // 关闭修改密码对话框
+  const handleClosePasswordDialog = () => {
+    setShowPasswordDialog(false);
   };
 
   // 初始化加载
@@ -510,18 +467,16 @@ export default function PersonalDashboard(props) {
     <UserHeader $w={$w} showHomeButton={true} />
     
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      {/* 页面标题和操作按钮 */}
+      {/* 页面标题和修改密码按钮 */}
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">个人工作台</h1>
           <p className="text-gray-600">查看和管理您的会议室预约记录</p>
         </div>
-        <div className="flex space-x-3">
-          <Button variant="outline" onClick={handleEditProfile} className="flex items-center bg-blue-100 text-blue-800 hover:bg-blue-200">
-            <Edit className="w-4 h-4 mr-2" />
-            修改个人资料
-          </Button>
-        </div>
+        <Button onClick={handleOpenPasswordDialog} variant="outline" className="flex items-center space-x-2 bg-blue-50 text-blue-700 hover:bg-blue-100 border-blue-200">
+          <Lock className="w-4 h-4" />
+          <span>修改密码</span>
+        </Button>
       </div>
 
       {/* 用户权限展示区域 - 详细展示 */}
@@ -820,8 +775,8 @@ export default function PersonalDashboard(props) {
           </TabsContent>}
       </Tabs>
 
-      {/* 修改个人资料对话框 - 使用新的ProfileEditDialog组件 */}
-      <ProfileEditDialog open={editDialogOpen} onOpenChange={setEditDialogOpen} employee={selectedEmployee} onSave={handleSaveProfile} $w={$w} />
+      {/* 修改密码对话框 */}
+      <PasswordChangeDialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog} $w={$w} currentUser={currentUser} />
     </div>
   </div>;
 }
