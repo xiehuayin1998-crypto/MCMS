@@ -123,7 +123,7 @@ export function PasswordChangeDialog({
         return;
       }
 
-      // 更新密码 - 修复filter格式
+      // 更新密码 - 修复filter格式，确保格式完全正确
       const updateResult = await $w.cloud.callDataSource({
         dataSourceName: 'mc_users',
         methodName: 'wedaUpdateV2',
@@ -137,25 +137,36 @@ export function PasswordChangeDialog({
           },
           data: {
             password: newPassword
-          }
+          },
+          // 添加必要的参数
+          getCount: true
         }
       });
-      if (updateResult.count > 0) {
+      if (updateResult && updateResult.count > 0) {
         toast({
           title: "密码修改成功",
           description: "您的密码已成功更新"
         });
         handleClose();
       } else {
-        throw new Error('更新失败');
+        throw new Error('更新失败，可能没有找到匹配的记录');
       }
     } catch (error) {
       console.error('修改密码失败:', error);
-      toast({
-        title: "修改密码失败",
-        description: error.message || "请稍后重试",
-        variant: "destructive"
-      });
+      // 检查错误类型，提供更具体的错误信息
+      if (error.message && error.message.includes('filter不能为空')) {
+        toast({
+          title: "参数错误",
+          description: "更新参数格式不正确，请联系管理员",
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "修改密码失败",
+          description: error.message || "请稍后重试",
+          variant: "destructive"
+        });
+      }
     } finally {
       setLoading(false);
     }
