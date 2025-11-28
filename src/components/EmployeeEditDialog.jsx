@@ -495,77 +495,77 @@ export function EmployeeEditDialog({
   const renderInput = (field, label, type = 'text', placeholder = '') => {
     if (field === 'password') {
       return <div>
-          <Label>{label}</Label>
-          <div className="relative">
-            <Input type={showPassword ? 'text' : 'password'} value={formData[field] || ''} onChange={e => handleInputChange(field, e.target.value)} placeholder={placeholder} className={errors[field] ? 'border-red-500' : ''} />
-            <button type="button" className="absolute inset-y-0 right-0 pr-3 flex items-center" onClick={() => setShowPassword(!showPassword)}>
-              {showPassword ? <EyeOff className="h-4 w-4 text-gray-500" /> : <Eye className="h-4 w-4 text-gray-500" />}
-            </button>
-          </div>
-          {errors[field] && <p className="text-sm text-red-500 mt-1">{errors[field]}</p>}
-        </div>;
-    }
-    return <div>
         <Label>{label}</Label>
-        <Input type={type} value={formData[field] || ''} onChange={e => handleInputChange(field, e.target.value)} placeholder={placeholder} className={errors[field] ? 'border-red-500' : ''} />
+        <div className="relative">
+          <Input type={showPassword ? 'text' : 'password'} value={formData[field] || ''} onChange={e => handleInputChange(field, e.target.value)} placeholder={placeholder} className={errors[field] ? 'border-red-500' : ''} />
+          <button type="button" className="absolute inset-y-0 right-0 pr-3 flex items-center" onClick={() => setShowPassword(!showPassword)}>
+            {showPassword ? <EyeOff className="h-4 w-4 text-gray-500" /> : <Eye className="h-4 w-4 text-gray-500" />}
+          </button>
+        </div>
         {errors[field] && <p className="text-sm text-red-500 mt-1">{errors[field]}</p>}
       </div>;
+    }
+    return <div>
+      <Label>{label}</Label>
+      <Input type={type} value={formData[field] || ''} onChange={e => handleInputChange(field, e.target.value)} placeholder={placeholder} className={errors[field] ? 'border-red-500' : ''} />
+      {errors[field] && <p className="text-sm text-red-500 mt-1">{errors[field]}</p>}
+    </div>;
   };
 
   // 渲染带错误提示的日期选择框（墨西哥时区调整）
   const renderDateInput = (field, label) => {
     return <div>
-        <Label>{label}</Label>
-        <Input type="date" value={formData[field] || ''} onChange={e => handleDateChange(field, e.target.value)} className={errors[field] ? 'border-red-500' : ''} />
-        {errors[field] && <p className="text-sm text-red-500 mt-1">{errors[field]}</p>}
-      </div>;
+      <Label>{label}</Label>
+      <Input type="date" value={formData[field] || ''} onChange={e => handleDateChange(field, e.target.value)} className={errors[field] ? 'border-red-500' : ''} />
+      {errors[field] && <p className="text-sm text-red-500 mt-1">{errors[field]}</p>}
+    </div>;
   };
 
   // 渲染带错误提示的选择框
   const renderSelect = (field, label, options) => <div>
-      <Label>{label}</Label>
-      <Select value={formData[field] || ''} onValueChange={value => handleInputChange(field, value)}>
-        <SelectTrigger className={errors[field] ? 'border-red-500' : ''}>
-          <SelectValue placeholder={`请选择${label}`} />
-        </SelectTrigger>
-        <SelectContent>
-          {options.map(option => <SelectItem key={option.value} value={option.value}>
-              {option.label}
-            </SelectItem>)}
-        </SelectContent>
-      </Select>
-      {errors[field] && <p className="text-sm text-red-500 mt-1">{errors[field]}</p>}
-    </div>;
+    <Label>{label}</Label>
+    <Select value={formData[field] || ''} onValueChange={value => handleInputChange(field, value)}>
+      <SelectTrigger className={errors[field] ? 'border-red-500' : ''}>
+        <SelectValue placeholder={`请选择${label}`} />
+      </SelectTrigger>
+      <SelectContent>
+        {options.map(option => <SelectItem key={option.value} value={option.value}>
+          {option.label}
+        </SelectItem>)}
+      </SelectContent>
+    </Select>
+    {errors[field] && <p className="text-sm text-red-500 mt-1">{errors[field]}</p>}
+  </div>;
 
   // 分组渲染表单字段
   const renderBasicInfo = () => <div className="space-y-4">
-      <h3 className="text-lg font-semibold text-gray-900">基本信息</h3>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {renderInput('name', '姓名 *')}
-        {renderInput('username', '用户名 *')}
-        {renderInput('employee_number', '工号', 'text', '请输入工号')}
-        {renderSelect('sex', '性别', [{
+    <h3 className="text-lg font-semibold text-gray-900">基本信息</h3>
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {renderInput('name', '姓名 *')}
+      {renderInput('username', '用户名 *')}
+      {renderInput('employee_number', '工号', 'text', '请输入工号')}
+      {renderSelect('sex', '性别', [{
         value: '男',
         label: '男'
       }, {
         value: '女',
         label: '女'
       }])}
-        <div>
-          <Label>所属部门</Label>
-          <Select value={formData.department || ''} onValueChange={handleDepartmentChange}>
-            <SelectTrigger>
-              <SelectValue placeholder="请选择部门" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="none">无部门</SelectItem>
-              {departments.map(dept => <SelectItem key={dept._id} value={dept.departmentName}>
-                  {dept.departmentName}
-                </SelectItem>)}
-            </SelectContent>
-          </Select>
-        </div>
-        {renderSelect('employee_type', '类别', [{
+      <div>
+        <Label>所属部门</Label>
+        <Select value={formData.department || ''} onValueChange={handleDepartmentChange}>
+          <SelectTrigger>
+            <SelectValue placeholder="请选择部门" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="none">无部门</SelectItem>
+            {departments.map(dept => <SelectItem key={dept._id} value={dept.departmentName}>
+              {dept.departmentName}
+            </SelectItem>)}
+          </SelectContent>
+        </Select>
+      </div>
+      {renderSelect('employee_type', '类别', [{
         value: '正式员工',
         label: '正式员工'
       }, {
@@ -578,35 +578,35 @@ export function EmployeeEditDialog({
         value: '合同工',
         label: '合同工'
       }])}
-        {employee ? <div>
-            <Label>密码（留空不修改）</Label>
-            {renderInput('password', '密码', 'password', '请输入新密码，留空不修改')}
-          </div> : <div>
-            <Label>密码 *</Label>
-            {renderInput('password', '密码', 'password', '请输入密码')}
-          </div>}
-      </div>
-    </div>;
+      {employee ? <div>
+        <Label>密码（留空不修改）</Label>
+        {renderInput('password', '密码', 'password', '请输入新密码，留空不修改')}
+      </div> : <div>
+        <Label>密码 *</Label>
+        {renderInput('password', '密码', 'password', '请输入密码')}
+      </div>}
+    </div>
+  </div>;
   const renderWorkInfo = () => <div className="space-y-4">
-      <h3 className="text-lg font-semibold text-gray-900">工作信息</h3>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {renderInput('Workplace', '工作地', 'text', '请输入工作地')}
-        {renderInput('company', '所属子公司', 'text', '请输入所属子公司')}
-        {renderInput('headquarters_location', '总部所属单位', 'text', '请输入总部所属单位')}
-        {renderInput('job_position_number', '职位代码', 'text', '请输入职位代码')}
-        {renderDateInput('join_date', '入司时间')}
-      </div>
-    </div>;
+    <h3 className="text-lg font-semibold text-gray-900">工作信息</h3>
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {renderInput('Workplace', '工作地', 'text', '请输入工作地')}
+      {renderInput('company', '所属子公司', 'text', '请输入所属子公司')}
+      {renderInput('headquarters_location', '总部所属单位', 'text', '请输入总部所属单位')}
+      {renderInput('job_position_number', '职位代码', 'text', '请输入职位代码')}
+      {renderDateInput('join_date', '入司时间')}
+    </div>
+  </div>;
   const renderPersonalInfo = () => <div className="space-y-4">
-      <h3 className="text-lg font-semibold text-gray-900">个人信息</h3>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {renderDateInput('birthday', '出生日期')}
-        <div>
-          <Label>年龄</Label>
-          <Input value={formData.age || ''} readOnly className="bg-gray-50" placeholder="自动计算" />
-        </div>
-        {renderInput('birth_place', '籍贯', 'text', '请输入籍贯')}
-        {renderSelect('education', '学历', [{
+    <h3 className="text-lg font-semibold text-gray-900">个人信息</h3>
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {renderDateInput('birthday', '出生日期')}
+      <div>
+        <Label>年龄</Label>
+        <Input value={formData.age || ''} readOnly className="bg-gray-50" placeholder="自动计算" />
+      </div>
+      {renderInput('birth_place', '籍贯', 'text', '请输入籍贯')}
+      {renderSelect('education', '学历', [{
         value: '高中',
         label: '高中'
       }, {
@@ -622,9 +622,9 @@ export function EmployeeEditDialog({
         value: '博士',
         label: '博士'
       }])}
-        {renderInput('graduation_institution', '毕业院校', 'text', '请输入毕业院校')}
-        {renderInput('major', '专业', 'text', '请输入专业')}
-        {renderSelect('country_of_citizenship', '国籍', [{
+      {renderInput('graduation_institution', '毕业院校', 'text', '请输入毕业院校')}
+      {renderInput('major', '专业', 'text', '请输入专业')}
+      {renderSelect('country_of_citizenship', '国籍', [{
         value: '中国',
         label: '中国'
       }, {
@@ -637,76 +637,76 @@ export function EmployeeEditDialog({
         value: '其他',
         label: '其他'
       }])}
-      </div>
-    </div>;
+    </div>
+  </div>;
   const renderDocumentInfo = () => <div className="space-y-4">
-      <h3 className="text-lg font-semibold text-gray-900">证件信息</h3>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {renderInput('ID_number', '身份证号', 'text', '请输入身份证号')}
-        {renderInput('social_security_number', '社保号', 'text', '请输入社保号')}
-        {renderInput('rfc', '个人税号', 'text', '请输入个人税号')}
-      </div>
-    </div>;
+    <h3 className="text-lg font-semibold text-gray-900">证件信息</h3>
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {renderInput('ID_number', '身份证号', 'text', '请输入身份证号')}
+      {renderInput('social_security_number', '社保号', 'text', '请输入社保号')}
+      {renderInput('rfc', '个人税号', 'text', '请输入个人税号')}
+    </div>
+  </div>;
   const renderContactInfo = () => <div className="space-y-4">
-      <h3 className="text-lg font-semibold text-gray-900">联系信息</h3>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {renderInput('address', '墨西哥住宿地址', 'text', '请输入墨西哥住宿地址')}
-        {renderInput('telephone_number', '电话号码', 'text', '请输入电话号码')}
-        {renderInput('e_mail', '邮件地址', 'email', '请输入邮件地址')}
-        {renderInput('emergency_contact', '紧急联系人', 'text', '请输入紧急联系人')}
-        {renderInput('telephone_number_of_emergency_contact', '紧急联系人电话', 'text', '请输入紧急联系人电话')}
-      </div>
-    </div>;
+    <h3 className="text-lg font-semibold text-gray-900">联系信息</h3>
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {renderInput('address', '墨西哥住宿地址', 'text', '请输入墨西哥住宿地址')}
+      {renderInput('telephone_number', '电话号码', 'text', '请输入电话号码')}
+      {renderInput('e_mail', '邮件地址', 'email', '请输入邮件地址')}
+      {renderInput('emergency_contact', '紧急联系人', 'text', '请输入紧急联系人')}
+      {renderInput('telephone_number_of_emergency_contact', '紧急联系人电话', 'text', '请输入紧急联系人电话')}
+    </div>
+  </div>;
   const renderPermissionInfo = () => <div className="space-y-4">
-      <h3 className="text-lg font-semibold text-gray-900">权限信息</h3>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="flex items-center space-x-2">
-          <Checkbox checked={formData.isAdmin} onCheckedChange={checked => handleInputChange('isAdmin', checked)} />
-          <Label>是否管理员</Label>
-        </div>
-        <div className="flex items-center space-x-2">
-          <Checkbox checked={formData.isMinister} onCheckedChange={checked => handleInputChange('isMinister', checked)} />
-          <Label>是否部长</Label>
-        </div>
-        {renderInput('permissions', '权限列表', 'text', '请输入权限列表（逗号分隔）')}
-        {renderInput('navigationOrder', '功能导航顺序', 'text', '请输入功能导航顺序')}
-      </div>
-      <div>
-        <Label>用户角色</Label>
-        {rolesLoading ? <div className="flex items-center justify-center py-2">
-            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-            <span className="ml-2 text-sm text-gray-500">加载中...</span>
-          </div> : roles.length > 0 ? <div className="space-y-2 mt-2">
-            {roles.map(role => <label key={role._id} className="flex items-center space-x-2">
-                <input type="checkbox" checked={formData.roles.includes(role._id)} onChange={e => handleRoleChange(role._id, e.target.checked)} className="rounded border-gray-300" />
-                <span className="text-sm">{role.roleName} (等级: {role.level || 0})</span>
-              </label>)}
-          </div> : <div className="text-sm text-gray-500 py-2">暂无可用角色</div>}
-      </div>
-    </div>;
+    <h3 className="text-lg font-semibold text-gray-900">权限信息</h3>
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        // <div className="flex items-center space-x-2">
+        //   <Checkbox checked={formData.isAdmin} onCheckedChange={checked => handleInputChange('isAdmin', checked)} />
+        //   <Label>是否管理员</Label>
+        // </div>
+        // <div className="flex items-center space-x-2">
+        //   <Checkbox checked={formData.isMinister} onCheckedChange={checked => handleInputChange('isMinister', checked)} />
+        //   <Label>是否部长</Label>
+        // </div>
+      // {renderInput('permissions', '权限列表', 'text', '请输入权限列表（逗号分隔）')}
+      // {renderInput('navigationOrder', '功能导航顺序', 'text', '请输入功能导航顺序')}
+    </div>
+      // <div>
+      //   <Label>用户角色</Label>
+      //   {rolesLoading ? <div className="flex items-center justify-center py-2">
+      //       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+      //       <span className="ml-2 text-sm text-gray-500">加载中...</span>
+      //     </div> : roles.length > 0 ? <div className="space-y-2 mt-2">
+      //       {roles.map(role => <label key={role._id} className="flex items-center space-x-2">
+      //           <input type="checkbox" checked={formData.roles.includes(role._id)} onChange={e => handleRoleChange(role._id, e.target.checked)} className="rounded border-gray-300" />
+      //           <span className="text-sm">{role.roleName} (等级: {role.level || 0})</span>
+      //         </label>)}
+      //     </div> : <div className="text-sm text-gray-500 py-2">暂无可用角色</div>}
+      // </div>
+  </div>;
   return <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>{employee ? '编辑用户' : '新增用户'}</DialogTitle>
-        </DialogHeader>
-        
-        <div className="space-y-6 py-4">
-          {renderBasicInfo()}
-          {renderWorkInfo()}
-          {renderPersonalInfo()}
-          {renderDocumentInfo()}
-          {renderContactInfo()}
-          {renderPermissionInfo()}
-        </div>
+    <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogHeader>
+        <DialogTitle>{employee ? '编辑用户' : '新增用户'}</DialogTitle>
+      </DialogHeader>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            取消
-          </Button>
-          <Button onClick={handleSubmit} disabled={saving || rolesLoading}>
-            {saving ? <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div> : '保存'}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>;
+      <div className="space-y-6 py-4">
+        {renderBasicInfo()}
+        {renderWorkInfo()}
+        {renderPersonalInfo()}
+        {renderDocumentInfo()}
+        {renderContactInfo()}
+        {renderPermissionInfo()}
+      </div>
+
+      <DialogFooter>
+        <Button variant="outline" onClick={() => onOpenChange(false)}>
+          取消
+        </Button>
+        <Button onClick={handleSubmit} disabled={saving || rolesLoading}>
+          {saving ? <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div> : '保存'}
+        </Button>
+      </DialogFooter>
+    </DialogContent>
+  </Dialog>;
 }
