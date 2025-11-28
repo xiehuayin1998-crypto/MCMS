@@ -27,9 +27,30 @@ export default function EmployeeManagement(props) {
     role: ''
   });
   const [importExportOpen, setImportExportOpen] = useState(false);
+  const [isSearchReadonly, setIsSearchReadonly] = useState(false);
   const {
     toast
   } = useToast();
+
+  // 从URL参数中获取搜索名称
+  const getSearchNameFromParams = () => {
+    try {
+      const params = $w.page.dataset.params || {};
+      return params.searchName || '';
+    } catch (error) {
+      return '';
+    }
+  };
+
+  // 检查是否只读模式
+  const getReadonlyFromParams = () => {
+    try {
+      const params = $w.page.dataset.params || {};
+      return params.readonly === 'true';
+    } catch (error) {
+      return false;
+    }
+  };
 
   // 加载用户列表
   const loadEmployees = async (page = 1) => {
@@ -96,6 +117,10 @@ export default function EmployeeManagement(props) {
 
   // 处理搜索和筛选
   const handleSearch = (searchTerm, department, role) => {
+    // 如果是只读模式，不允许修改搜索条件
+    if (isSearchReadonly) {
+      return;
+    }
     setSearchParams({
       searchTerm,
       department,
@@ -162,6 +187,20 @@ export default function EmployeeManagement(props) {
     loadEmployees(currentPage);
   };
 
+  // 初始化搜索参数
+  useEffect(() => {
+    const searchName = getSearchNameFromParams();
+    const readonly = getReadonlyFromParams();
+    if (searchName) {
+      setSearchParams({
+        searchTerm: searchName,
+        department: '',
+        role: ''
+      });
+      setIsSearchReadonly(readonly);
+    }
+  }, []);
+
   // 监听搜索参数变化
   useEffect(() => {
     loadEmployees(1);
@@ -202,7 +241,7 @@ export default function EmployeeManagement(props) {
             <CardTitle>用户列表</CardTitle>
           </CardHeader>
           <CardContent>
-            <EmployeeSearchFilter onSearch={handleSearch} />
+            <EmployeeSearchFilter onSearch={handleSearch} initialSearchTerm={searchParams.searchTerm} isReadonly={isSearchReadonly} />
             <div className="mt-4">
               <EmployeeTable employees={filteredEmployees} onEdit={emp => {
               setSelectedEmployee(emp);
@@ -214,8 +253,7 @@ export default function EmployeeManagement(props) {
 
         <EmployeeEditDialog open={editDialogOpen} onOpenChange={setEditDialogOpen} employee={selectedEmployee} onSave={handleSave} />
         
-        <UserJsonImportExport open={importExportOpen} onOpenChange={setImportExportOpen} onComplete={handleImportExportComplete} $w={$w} // 传递$w参数
-      />
+        <UserJsonImportExport open={importExportOpen} onOpenChange={setImportExportOpen} onComplete={handleImportExportComplete} $w={$w} />
       </div>
     </div>;
 }
