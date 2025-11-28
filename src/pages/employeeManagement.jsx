@@ -191,7 +191,7 @@ export default function EmployeeManagement(props) {
     loadEmployees(currentPage);
   };
 
-  // 退出只读模式
+  // 退出只读模式（保留函数但不再使用按钮）
   const handleExitReadOnlyMode = () => {
     setIsReadOnlySearch(false);
     setSearchParams({
@@ -227,9 +227,7 @@ export default function EmployeeManagement(props) {
             </Button>
           </div>
           <div className="flex space-x-3">
-            {isReadOnlySearch && <Button variant="outline" onClick={handleExitReadOnlyMode} className="flex items-center bg-gray-100 text-gray-800 hover:bg-gray-200">
-                退出查看模式
-              </Button>}
+            {/* 已移除退出查看模式按钮 */}
             <Button variant="outline" onClick={() => setImportExportOpen(true)} className="flex items-center bg-green-100 text-green-800 hover:bg-green-200">
               <Upload className="w-4 h-4 mr-2" />
               批量操作（JSON格式）
