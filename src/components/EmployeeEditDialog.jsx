@@ -281,12 +281,12 @@ export function EmployeeEditDialog({
     });
   };
 
-  // 验证身份证号
-  const validateIdCard = idCard => {
-    if (!idCard) return true;
-    const regex = /(^\d{15}$)|(^\d{18}$)|(^\d{17}(\d|X|x)$)/;
-    return regex.test(idCard);
-  };
+  // // 验证身份证号
+  // const validateIdCard = idCard => {
+  //   if (!idCard) return true;
+  //   const regex = /(^\d{15}$)|(^\d{18}$)|(^\d{17}(\d|X|x)$)/;
+  //   return regex.test(idCard);
+  // };
 
   // 验证密码
   const validatePassword = password => {
@@ -565,7 +565,7 @@ export function EmployeeEditDialog({
           </SelectContent>
         </Select>
       </div>
-      {renderSelect('employee_type', '类别', [{
+      {/* {renderSelect('employee_type', '类别', [{
         value: '正式员工',
         label: '正式员工'
       }, {
@@ -577,7 +577,7 @@ export function EmployeeEditDialog({
       }, {
         value: '合同工',
         label: '合同工'
-      }])}
+      }])} */}
       {employee ? <div>
         <Label>密码（留空不修改）</Label>
         {renderInput('password', '密码', 'password', '请输入新密码，留空不修改')}
@@ -592,7 +592,6 @@ export function EmployeeEditDialog({
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       {renderInput('Workplace', '工作地', 'text', '请输入工作地')}
       {renderInput('company', '所属子公司', 'text', '请输入所属子公司')}
-      {renderInput('headquarters_location', '总部所属单位', 'text', '请输入总部所属单位')}
       {renderInput('job_position_number', '职位代码', 'text', '请输入职位代码')}
       {renderDateInput('join_date', '入司时间')}
     </div>
@@ -671,7 +670,7 @@ export function EmployeeEditDialog({
       // {renderInput('permissions', '权限列表', 'text', '请输入权限列表（逗号分隔）')}
       // {renderInput('navigationOrder', '功能导航顺序', 'text', '请输入功能导航顺序')} */}
     {/* </div> */}
-      {/* // <div>
+    {/* // <div>
       //   <Label>用户角色</Label>
       //   {rolesLoading ? <div className="flex items-center justify-center py-2">
       //       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
@@ -683,7 +682,7 @@ export function EmployeeEditDialog({
       //         </label>)}
       //     </div> : <div className="text-sm text-gray-500 py-2">暂无可用角色</div>}
       // </div> */}
-  // </div>;
+  </div>;
   return <Dialog open={open} onOpenChange={onOpenChange}>
     <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
       <DialogHeader>

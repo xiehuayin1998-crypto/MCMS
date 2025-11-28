@@ -130,7 +130,6 @@ export function EmployeeTable({
           <p><span className="text-gray-600">用户名：</span>{employee.username || '-'}</p>
           <p><span className="text-gray-600">性别：</span>{employee.sex || '-'}</p>
           <p><span className="text-gray-600">工号：</span>{employee.employee_number || '-'}</p>
-          <p><span className="text-gray-600">类别：</span>{employee.employee_type || '-'}</p>
           <p><span className="text-gray-600">出生日期：</span>{formatDate(employee.birthday)}</p>
           <p><span className="text-gray-600">年龄：</span>{employee.age || '-'}</p>
           <p><span className="text-gray-600">籍贯：</span>{employee.birth_place || '-'}</p>
