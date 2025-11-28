@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 // @ts-ignore;
 import { Button, Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, useToast, Card, CardContent, CardHeader, CardTitle, Tabs, TabsContent, TabsList, TabsTrigger, Input, Label, Badge, Textarea } from '@/components/ui';
 // @ts-ignore;
-import { Download, Upload, FileText, X, CheckCircle, AlertCircle, FileCode, Copy } from 'lucide-react';
+import { Download, Upload, FileText, X, CheckCircle, AlertCircle, FileCode, Copy, FileSpreadsheet } from 'lucide-react';
 
 export function UserJsonImportExport({
   open,
@@ -22,7 +22,7 @@ export function UserJsonImportExport({
   } = useToast();
 
   // 下载JSON模板（根据最新数据模型）
-  const downloadTemplate = () => {
+  const downloadJsonTemplate = () => {
     try {
       // 创建JSON模板数据，完全匹配最新的数据模型字段
       const templateData = [{
@@ -82,6 +82,41 @@ export function UserJsonImportExport({
       toast({
         title: "下载失败",
         description: error.message || "下载模板时发生错误",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // 下载Excel模板（CSV格式）
+  const downloadExcelTemplate = () => {
+    try {
+      // 创建CSV格式的Excel模板
+      const csvHeaders = ['name', 'username', 'password', 'isAdmin', 'permissions', 'roles', 'roles_level', 'isMinister', 'navigationOrder', 'department', 'sex', 'employee_number', 'employee_type', 'Workplace', 'company', 'headquarters_location', 'job_position_number', 'join_date', 'birthday', 'age', 'birth_place', 'social_security_number', 'rfc', 'education', 'graduation_institution', 'major', 'country_of_citizenship', 'address', 'telephone_number', 'ID_number', 'e_mail', 'emergency_contact', 'telephone_number_of_emergency_contact'];
+      const csvContent = [csvHeaders.join(','), '张三,zhangsan,123456,false,,user,1,false,,技术部,男,EMP001,正式员工,墨西哥城,墨西哥轨道交通装备有限公司,北京总部,POS001,2023-01-15,1990-05-20,33,北京市,SSN001,RFC001,本科,清华大学,计算机科学,中国,墨西哥城某街道123号,+52-55-1234-5678,110101199005201234,zhangsan@example.com,李四,13900139000'].join('\n');
+
+      // 添加BOM头解决中文乱码问题
+      const BOM = '\uFEFF';
+      const blob = new Blob([BOM + csvContent], {
+        type: 'text/csv; charset=utf-8'
+      });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = '用户导入模板.csv';
+      link.style.display = 'none';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      toast({
+        title: "下载成功",
+        description: "Excel模板已下载，可在Excel中编辑后导入"
+      });
+    } catch (error) {
+      console.error('下载Excel模板失败:', error);
+      toast({
+        title: "下载失败",
+        description: error.message || "下载Excel模板时发生错误",
         variant: "destructive"
       });
     }
@@ -402,10 +437,10 @@ export function UserJsonImportExport({
         <DialogHeader>
           <DialogTitle className="flex items-center">
             <FileCode className="w-6 h-6 mr-2 text-blue-600" />
-            用户批量操作 - JSON格式
+            用户批量操作
           </DialogTitle>
           <DialogDescription>
-            使用JSON格式导入导出用户数据，完全匹配最新数据模型
+            支持JSON格式和Excel格式的导入导出，完全匹配最新数据模型
           </DialogDescription>
         </DialogHeader>
 
@@ -421,7 +456,7 @@ export function UserJsonImportExport({
                     正在导入...
                   </> : <>
                     <Upload className="w-4 h-4 mr-2" />
-                    文件导入
+                    JSON文件导入
                   </>}
               </Button>
               <Button onClick={handleJsonTextImport} disabled={!jsonData.trim() || importing} className="bg-green-600 hover:bg-green-700">
@@ -430,7 +465,7 @@ export function UserJsonImportExport({
                     正在导入...
                   </> : <>
                     <FileCode className="w-4 h-4 mr-2" />
-                    文本导入
+                    JSON文本导入
                   </>}
               </Button>
             </div>}
@@ -458,21 +493,34 @@ export function UserJsonImportExport({
                 <CardTitle className="flex items-center">
                   <FileText className="w-5 h-5 mr-2" />
                   导入用户数据
-                  <Badge variant="secondary" className="ml-2 bg-green-100 text-green-800">JSON格式</Badge>
+                  <div className="flex space-x-2 ml-2">
+                    <Badge variant="secondary" className="bg-green-100 text-green-800">JSON格式</Badge>
+                    <Badge variant="secondary" className="bg-blue-100 text-blue-800">Excel格式</Badge>
+                  </div>
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div className="space-y-2">
-                  <Label>下载JSON模板</Label>
-                  <p className="text-sm text-gray-600">模板已根据最新数据模型更新，包含所有可用字段</p>
-                  <Button onClick={downloadTemplate} variant="outline" className="w-full border-green-200 hover:bg-green-50">
-                    <Download className="w-4 h-4 mr-2" />
-                    下载JSON模板
-                  </Button>
+                {/* 模板下载区域 */}
+                <div className="space-y-4">
+                  <Label>下载导入模板</Label>
+                  <p className="text-sm text-gray-600">选择适合您的模板格式进行下载</p>
+                  <div className="grid grid-cols-2 gap-4">
+                    <Button onClick={downloadJsonTemplate} variant="outline" className="border-green-200 hover:bg-green-50 h-16 flex flex-col">
+                      <FileCode className="w-5 h-5 mb-1 text-green-600" />
+                      <span className="text-sm">JSON模板</span>
+                      <span className="text-xs text-gray-500">推荐开发人员使用</span>
+                    </Button>
+                    <Button onClick={downloadExcelTemplate} variant="outline" className="border-blue-200 hover:bg-blue-50 h-16 flex flex-col">
+                      <FileSpreadsheet className="w-5 h-5 mb-1 text-blue-600" />
+                      <span className="text-sm">Excel模板</span>
+                      <span className="text-xs text-gray-500">推荐普通用户使用</span>
+                    </Button>
+                  </div>
                 </div>
 
+                {/* JSON文件导入 */}
                 <div className="space-y-2">
-                  <Label>方式一：文件导入</Label>
+                  <Label>方式一：JSON文件导入</Label>
                   <p className="text-sm text-gray-600">选择JSON格式的文件进行导入</p>
                   <Input type="file" accept=".json" onChange={handleFileSelect} disabled={importing} className="border-2 border-dashed border-gray-300 p-4 hover:border-green-300 transition-colors" />
                   {importFile && <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-200">
@@ -489,13 +537,14 @@ export function UserJsonImportExport({
                     </div>}
                 </div>
 
+                {/* JSON文本粘贴 */}
                 <div className="space-y-2">
-                  <Label>方式二：文本粘贴</Label>
+                  <Label>方式二：JSON文本粘贴</Label>
                   <p className="text-sm text-gray-600">直接粘贴JSON格式的用户数据</p>
                   <div className="flex space-x-2 mb-2">
                     <Button onClick={copyTemplateToClipboard} variant="outline" size="sm">
                       <Copy className="w-4 h-4 mr-1" />
-                      复制模板
+                      复制JSON模板
                     </Button>
                   </div>
                   <Textarea value={jsonData} onChange={e => setJsonData(e.target.value)} placeholder={`请输入JSON格式的用户数据，例如：
@@ -509,6 +558,20 @@ export function UserJsonImportExport({
     "employee_number": "EMP001"
   }
 ]`} rows={8} className="font-mono text-sm" />
+                </div>
+
+                {/* Excel导入说明 */}
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <div className="flex items-center mb-2">
+                    <FileSpreadsheet className="w-5 h-5 text-blue-600 mr-2" />
+                    <span className="font-medium text-blue-800">Excel模板使用说明</span>
+                  </div>
+                  <ul className="text-sm text-blue-700 space-y-1">
+                    <li>• 下载Excel模板后，在Excel中编辑数据</li>
+                    <li>• 保存为CSV格式（UTF-8编码）</li>
+                    <li>• 目前仅支持JSON格式导入，Excel数据需转换为JSON格式</li>
+                    <li>• 推荐使用在线工具将Excel转换为JSON</li>
+                  </ul>
                 </div>
 
                 {importResults && <Card className={importResults.failed > 0 ? 'border-red-200 bg-red-50' : 'border-green-200 bg-green-50'}>
