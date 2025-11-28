@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 // @ts-ignore;
 import { Button, Card, CardContent, CardHeader, CardTitle, useToast } from '@/components/ui';
 // @ts-ignore;
-import { Plus, Users, Home, Download, Upload } from 'lucide-react';
+import { Plus, Users, Home, Download, Upload, Search, Filter } from 'lucide-react';
 
 import { EmployeeTable } from '@/components/EmployeeTable';
 import { EmployeeEditDialog } from '@/components/EmployeeEditDialog';
@@ -15,7 +15,7 @@ export default function EmployeeManagement(props) {
   } = props;
   const [employees, setEmployees] = useState([]);
   const [filteredEmployees, setFilteredEmployees] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false); // 初始为false，不自动加载
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [totalCount, setTotalCount] = useState(0);
@@ -28,7 +28,7 @@ export default function EmployeeManagement(props) {
   });
   const [importExportOpen, setImportExportOpen] = useState(false);
   const [isReadOnlySearch, setIsReadOnlySearch] = useState(false);
-  const [searchError, setSearchError] = useState('');
+  const [hasSearched, setHasSearched] = useState(false); // 标记是否已进行搜索
   const {
     toast
   } = useToast();
@@ -43,6 +43,9 @@ export default function EmployeeManagement(props) {
         searchTerm: params.autoSearch
       }));
       setIsReadOnlySearch(params.readOnly === 'true');
+      // 自动执行搜索
+      handleSearch(params.autoSearch, '', '');
+      setHasSearched(true);
 
       // 显示提示信息
       toast({
@@ -52,51 +55,38 @@ export default function EmployeeManagement(props) {
     }
   }, [$w.page.dataset.params]);
 
-  // 优化搜索查询逻辑
-  const buildSearchFilter = (searchTerm, department, role) => {
-    const filter = {
-      where: {}
-    };
-
-    // 优化搜索条件：使用精确匹配和模糊匹配结合
-    if (searchTerm) {
-      // 使用 $regex 进行模糊匹配，同时支持精确匹配
-      filter.where.$or = [{
-        name: {
-          $regex: searchTerm,
-          $options: 'i'
-        }
-      }, {
-        username: {
-          $regex: searchTerm,
-          $options: 'i'
-        }
-      }, {
-        employee_number: {
-          $regex: searchTerm,
-          $options: 'i'
-        }
-      }];
-    }
-    if (department && department !== 'all') {
-      filter.where.department = {
-        $eq: department
-      };
-    }
-    if (role && role !== 'all') {
-      filter.where.roles = {
-        $in: [role]
-      };
-    }
-    return filter;
-  };
-
   // 加载用户列表
   const loadEmployees = async (page = 1) => {
     try {
       setLoading(true);
-      setSearchError('');
-      const filter = buildSearchFilter(searchParams.searchTerm, searchParams.department, searchParams.role);
+
+      // 构建查询条件
+      const filter = {
+        where: {}
+      };
+
+      // 添加搜索条件
+      if (searchParams.searchTerm) {
+        filter.where.$or = [{
+          name: {
+            $search: searchParams.searchTerm
+          }
+        }, {
+          username: {
+            $search: searchParams.searchTerm
+          }
+        }];
+      }
+      if (searchParams.department && searchParams.department !== 'all') {
+        filter.where.department = {
+          $eq: searchParams.department
+        };
+      }
+      if (searchParams.role && searchParams.role !== 'all') {
+        filter.where.roles = {
+          $in: [searchParams.role]
+        };
+      }
       const result = await $w.cloud.callDataSource({
         dataSourceName: 'mc_users',
         methodName: 'wedaGetRecordsV2',
@@ -117,16 +107,7 @@ export default function EmployeeManagement(props) {
       setFilteredEmployees(result.records || []);
       setTotalCount(result.total || 0);
       setCurrentPage(page);
-
-      // 检查搜索结果
-      if (isReadOnlySearch && searchParams.searchTerm && result.records.length === 0) {
-        setSearchError(`未找到匹配的用户：${searchParams.searchTerm}，请检查姓名是否正确`);
-      } else if (result.records.length > 0 && isReadOnlySearch) {
-        setSearchError('');
-      }
     } catch (error) {
-      console.error('加载用户失败:', error);
-      setSearchError('搜索失败，请稍后重试');
       toast({
         title: "加载失败",
         description: "无法加载用户列表",
@@ -137,7 +118,22 @@ export default function EmployeeManagement(props) {
     }
   };
 
-  // 处理搜索和筛选
+  // 处理搜索按钮点击
+  const handleSearchClick = () => {
+    if (isReadOnlySearch) {
+      toast({
+        title: "操作受限",
+        description: "当前为查看模式，搜索条件不可修改",
+        variant: "destructive"
+      });
+      return;
+    }
+    setHasSearched(true);
+    setCurrentPage(1);
+    loadEmployees(1);
+  };
+
+  // 处理搜索和筛选（实时响应，但不自动加载数据）
   const handleSearch = (searchTerm, department, role) => {
     // 如果是只读模式，不允许修改搜索条件
     if (isReadOnlySearch) {
@@ -153,7 +149,21 @@ export default function EmployeeManagement(props) {
       department,
       role
     });
-    setCurrentPage(1); // 重置到第一页
+    // 不自动加载数据，等待用户点击搜索按钮
+  };
+
+  // 处理重置按钮
+  const handleReset = () => {
+    if (isReadOnlySearch) return; // 只读模式下不允许重置
+    setSearchParams({
+      searchTerm: '',
+      department: '',
+      role: ''
+    });
+    setHasSearched(false); // 重置搜索状态
+    setEmployees([]); // 清空用户列表
+    setFilteredEmployees([]);
+    setTotalCount(0);
   };
 
   // 处理页码变化
@@ -222,20 +232,20 @@ export default function EmployeeManagement(props) {
       department: '',
       role: ''
     });
-    setSearchError('');
+    setHasSearched(false);
+    setEmployees([]);
+    setFilteredEmployees([]);
+    setTotalCount(0);
     toast({
       title: "退出查看模式",
       description: "已退出只读查看模式"
     });
   };
 
-  // 监听搜索参数变化
+  // 监听搜索参数变化（不再自动加载数据）
   useEffect(() => {
-    loadEmployees(1);
+    // 移除自动加载数据的功能
   }, [searchParams]);
-  useEffect(() => {
-    loadEmployees(1);
-  }, []);
   return <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-6">
@@ -274,27 +284,33 @@ export default function EmployeeManagement(props) {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <EmployeeSearchFilter onSearch={handleSearch} readOnly={isReadOnlySearch} initialSearchTerm={isReadOnlySearch ? searchParams.searchTerm : ''} />
+            <div className="flex flex-col sm:flex-row gap-4 mb-4">
+              <EmployeeSearchFilter onSearch={handleSearch} readOnly={isReadOnlySearch} initialSearchTerm={isReadOnlySearch ? searchParams.searchTerm : ''} />
+              {/* 新增搜索按钮 */}
+              <Button onClick={handleSearchClick} className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700" disabled={isReadOnlySearch}>
+                <Search className="w-4 h-4 mr-2" />
+                搜索
+              </Button>
+              {/* 重置按钮 */}
+              <Button variant="outline" onClick={handleReset} className={`w-full sm:w-auto ${isReadOnlySearch ? 'bg-gray-50 cursor-not-allowed' : ''}`} disabled={isReadOnlySearch}>
+                <Filter className="w-4 h-4 mr-2" />
+                {isReadOnlySearch ? "只读模式" : "重置"}
+              </Button>
+            </div>
             
-            {/* 搜索错误提示 */}
-            {searchError && <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0">
-                    <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                    </svg>
-                  </div>
-                  <div className="ml-3">
-                    <p className="text-sm text-yellow-700">{searchError}</p>
-                  </div>
-                </div>
-              </div>}
-
             <div className="mt-4">
-              <EmployeeTable employees={filteredEmployees} onEdit={emp => {
+              {/* 显示搜索提示 */}
+              {!hasSearched && <div className="text-center py-8 bg-gray-50 rounded-lg">
+                  <Search className="w-12 h-12 mx-auto text-gray-400 mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">请进行搜索</h3>
+                  <p className="text-gray-600">输入搜索条件后点击"搜索"按钮查看用户列表</p>
+                </div>}
+              
+              {/* 显示搜索结果 */}
+              {hasSearched && <EmployeeTable employees={filteredEmployees} onEdit={emp => {
               setSelectedEmployee(emp);
               setEditDialogOpen(true);
-            }} onDelete={handleDelete} loading={loading} totalCount={totalCount} currentPage={currentPage} pageSize={pageSize} onPageChange={handlePageChange} />
+            }} onDelete={handleDelete} loading={loading} totalCount={totalCount} currentPage={currentPage} pageSize={pageSize} onPageChange={handlePageChange} />}
             </div>
           </CardContent>
         </Card>

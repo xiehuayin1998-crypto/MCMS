@@ -1,9 +1,9 @@
 // @ts-ignore;
 import React, { useState, useEffect } from 'react';
 // @ts-ignore;
-import { Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Button } from '@/components/ui';
+import { Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui';
 // @ts-ignore;
-import { Search, Filter, Lock } from 'lucide-react';
+import { Search, Lock } from 'lucide-react';
 
 export function EmployeeSearchFilter({
   onSearch,
@@ -71,12 +71,6 @@ export function EmployeeSearchFilter({
   useEffect(() => {
     onSearch(searchTerm, department, role);
   }, [searchTerm, department, role]);
-  const handleReset = () => {
-    if (readOnly) return; // 只读模式下不允许重置
-    setSearchTerm('');
-    setDepartment('');
-    setRole('');
-  };
   const handleSearchTermChange = value => {
     if (readOnly) return; // 只读模式下不允许修改
     setSearchTerm(value);
@@ -89,7 +83,7 @@ export function EmployeeSearchFilter({
     if (readOnly) return; // 只读模式下不允许修改
     setRole(value);
   };
-  return <div className="flex flex-col sm:flex-row gap-4 mb-4">
+  return <div className="flex flex-col sm:flex-row gap-4">
       <div className="flex-1">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -121,10 +115,5 @@ export function EmployeeSearchFilter({
             </SelectItem>)}
         </SelectContent>
       </Select>
-
-      <Button variant="outline" onClick={handleReset} className={`w-full sm:w-auto ${readOnly ? 'bg-gray-50 cursor-not-allowed' : ''}`} disabled={readOnly}>
-        <Filter className="w-4 h-4 mr-2" />
-        {readOnly ? "只读模式" : "重置"}
-      </Button>
     </div>;
 }
