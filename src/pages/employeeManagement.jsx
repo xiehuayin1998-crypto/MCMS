@@ -28,6 +28,7 @@ export default function EmployeeManagement(props) {
   });
   const [importExportOpen, setImportExportOpen] = useState(false);
   const [isReadOnlySearch, setIsReadOnlySearch] = useState(false);
+  const [searchError, setSearchError] = useState('');
   const {
     toast
   } = useToast();
@@ -51,38 +52,51 @@ export default function EmployeeManagement(props) {
     }
   }, [$w.page.dataset.params]);
 
+  // 优化搜索查询逻辑
+  const buildSearchFilter = (searchTerm, department, role) => {
+    const filter = {
+      where: {}
+    };
+
+    // 优化搜索条件：使用精确匹配和模糊匹配结合
+    if (searchTerm) {
+      // 使用 $regex 进行模糊匹配，同时支持精确匹配
+      filter.where.$or = [{
+        name: {
+          $regex: searchTerm,
+          $options: 'i'
+        }
+      }, {
+        username: {
+          $regex: searchTerm,
+          $options: 'i'
+        }
+      }, {
+        employee_number: {
+          $regex: searchTerm,
+          $options: 'i'
+        }
+      }];
+    }
+    if (department && department !== 'all') {
+      filter.where.department = {
+        $eq: department
+      };
+    }
+    if (role && role !== 'all') {
+      filter.where.roles = {
+        $in: [role]
+      };
+    }
+    return filter;
+  };
+
   // 加载用户列表
   const loadEmployees = async (page = 1) => {
     try {
       setLoading(true);
-
-      // 构建查询条件
-      const filter = {
-        where: {}
-      };
-
-      // 添加搜索条件
-      if (searchParams.searchTerm) {
-        filter.where.$or = [{
-          name: {
-            $search: searchParams.searchTerm
-          }
-        }, {
-          username: {
-            $search: searchParams.searchTerm
-          }
-        }];
-      }
-      if (searchParams.department && searchParams.department !== 'all') {
-        filter.where.department = {
-          $eq: searchParams.department
-        };
-      }
-      if (searchParams.role && searchParams.role !== 'all') {
-        filter.where.roles = {
-          $in: [searchParams.role]
-        };
-      }
+      setSearchError('');
+      const filter = buildSearchFilter(searchParams.searchTerm, searchParams.department, searchParams.role);
       const result = await $w.cloud.callDataSource({
         dataSourceName: 'mc_users',
         methodName: 'wedaGetRecordsV2',
@@ -103,7 +117,16 @@ export default function EmployeeManagement(props) {
       setFilteredEmployees(result.records || []);
       setTotalCount(result.total || 0);
       setCurrentPage(page);
+
+      // 检查搜索结果
+      if (isReadOnlySearch && searchParams.searchTerm && result.records.length === 0) {
+        setSearchError(`未找到匹配的用户：${searchParams.searchTerm}，请检查姓名是否正确`);
+      } else if (result.records.length > 0 && isReadOnlySearch) {
+        setSearchError('');
+      }
     } catch (error) {
+      console.error('加载用户失败:', error);
+      setSearchError('搜索失败，请稍后重试');
       toast({
         title: "加载失败",
         description: "无法加载用户列表",
@@ -199,6 +222,7 @@ export default function EmployeeManagement(props) {
       department: '',
       role: ''
     });
+    setSearchError('');
     toast({
       title: "退出查看模式",
       description: "已退出只读查看模式"
@@ -251,6 +275,21 @@ export default function EmployeeManagement(props) {
           </CardHeader>
           <CardContent>
             <EmployeeSearchFilter onSearch={handleSearch} readOnly={isReadOnlySearch} initialSearchTerm={isReadOnlySearch ? searchParams.searchTerm : ''} />
+            
+            {/* 搜索错误提示 */}
+            {searchError && <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <div className="flex items-center">
+                  <div className="flex-shrink-0">
+                    <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-sm text-yellow-700">{searchError}</p>
+                  </div>
+                </div>
+              </div>}
+
             <div className="mt-4">
               <EmployeeTable employees={filteredEmployees} onEdit={emp => {
               setSelectedEmployee(emp);
