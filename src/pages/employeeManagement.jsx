@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 // @ts-ignore;
 import { Button, Card, CardContent, CardHeader, CardTitle, useToast } from '@/components/ui';
 // @ts-ignore;
-import { Plus, Users, Home, Download, Upload, Search, Filter } from 'lucide-react';
+import { Plus, Users, Home, Download, Upload, Search, Filter, RefreshCw } from 'lucide-react';
 
 import { EmployeeTable } from '@/components/EmployeeTable';
 import { EmployeeEditDialog } from '@/components/EmployeeEditDialog';
@@ -29,9 +29,26 @@ export default function EmployeeManagement(props) {
   const [importExportOpen, setImportExportOpen] = useState(false);
   const [isReadOnlySearch, setIsReadOnlySearch] = useState(false);
   const [hasSearched, setHasSearched] = useState(false); // 标记是否已进行搜索
+  const [currentUser, setCurrentUser] = useState(null); // 当前登录用户信息
   const {
     toast
   } = useToast();
+
+  // 获取当前登录用户信息
+  const getCurrentUser = () => {
+    try {
+      const storedUser = localStorage.getItem('currentUser');
+      if (storedUser) {
+        const userInfo = JSON.parse(storedUser);
+        setCurrentUser(userInfo);
+        return userInfo;
+      }
+      return null;
+    } catch (error) {
+      console.error('获取当前用户信息失败:', error);
+      return null;
+    }
+  };
 
   // 检查URL参数，处理自动搜索
   useEffect(() => {
@@ -52,6 +69,9 @@ export default function EmployeeManagement(props) {
         title: "自动搜索",
         description: `已自动搜索：${params.autoSearch}`
       });
+    } else {
+      // 初始化获取当前用户信息
+      getCurrentUser();
     }
   }, [$w.page.dataset.params]);
 
@@ -164,6 +184,37 @@ export default function EmployeeManagement(props) {
     setEmployees([]); // 清空用户列表
     setFilteredEmployees([]);
     setTotalCount(0);
+  };
+
+  // 处理只读模式下的刷新按钮点击
+  const handleRefresh = () => {
+    if (!isReadOnlySearch) return; // 只在只读模式下可用
+
+    // 重新获取当前用户信息
+    const user = getCurrentUser();
+    if (!user || !user.name && !user.username) {
+      toast({
+        title: "刷新失败",
+        description: "无法获取当前用户信息",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // 使用当前用户姓名重新搜索
+    const userName = user.name || user.username;
+    setSearchParams({
+      searchTerm: userName,
+      department: '',
+      role: ''
+    });
+    setHasSearched(true);
+    setCurrentPage(1);
+    loadEmployees(1);
+    toast({
+      title: "刷新成功",
+      description: `已重新搜索：${userName}`
+    });
   };
 
   // 处理页码变化
@@ -286,24 +337,39 @@ export default function EmployeeManagement(props) {
           <CardContent>
             <div className="flex flex-col sm:flex-row gap-4 mb-4">
               <EmployeeSearchFilter onSearch={handleSearch} readOnly={isReadOnlySearch} initialSearchTerm={isReadOnlySearch ? searchParams.searchTerm : ''} />
-              {/* 新增搜索按钮 */}
-              <Button onClick={handleSearchClick} className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700" disabled={isReadOnlySearch}>
-                <Search className="w-4 h-4 mr-2" />
-                搜索
-              </Button>
-              {/* 重置按钮 */}
-              <Button variant="outline" onClick={handleReset} className={`w-full sm:w-auto ${isReadOnlySearch ? 'bg-gray-50 cursor-not-allowed' : ''}`} disabled={isReadOnlySearch}>
-                <Filter className="w-4 h-4 mr-2" />
-                {isReadOnlySearch ? "只读模式" : "重置"}
-              </Button>
+              
+              {/* 条件渲染按钮组 */}
+              {isReadOnlySearch ?
+            // 只读模式下的按钮组
+            <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
+                  <Button onClick={handleRefresh} className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700">
+                    <RefreshCw className="w-4 h-4 mr-2" />
+                    刷新
+                  </Button>
+                </div> :
+            // 普通模式下的按钮组
+            <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
+                  <Button onClick={handleSearchClick} className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700">
+                    <Search className="w-4 h-4 mr-2" />
+                    搜索
+                  </Button>
+                  <Button variant="outline" onClick={handleReset} className="w-full sm:w-auto">
+                    <Filter className="w-4 h-4 mr-2" />
+                    重置
+                  </Button>
+                </div>}
             </div>
             
             <div className="mt-4">
               {/* 显示搜索提示 */}
               {!hasSearched && <div className="text-center py-8 bg-gray-50 rounded-lg">
                   <Search className="w-12 h-12 mx-auto text-gray-400 mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">请进行搜索</h3>
-                  <p className="text-gray-600">输入搜索条件后点击"搜索"按钮查看用户列表</p>
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">
+                    {isReadOnlySearch ? '正在加载您的信息...' : '请进行搜索'}
+                  </h3>
+                  <p className="text-gray-600">
+                    {isReadOnlySearch ? '系统将自动显示您的个人信息' : '输入搜索条件后点击"搜索"按钮查看用户列表'}
+                  </p>
                 </div>}
               
               {/* 显示搜索结果 */}
