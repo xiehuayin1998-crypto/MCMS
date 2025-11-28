@@ -200,12 +200,7 @@ export function EmployeeTable({
             <TableHead className="min-w-[100px]">姓名</TableHead>
             <TableHead className="min-w-[100px]">用户名</TableHead>
             <TableHead className="min-w-[100px]">工号</TableHead>
-            <TableHead className="min-w-[60px]">性别</TableHead>
-            <TableHead className="min-w-[100px]">类别</TableHead>
-            <TableHead className="min-w-[120px]">工作地</TableHead>
             <TableHead className="min-w-[100px]">部门</TableHead>
-            <TableHead className="min-w-[150px]">角色</TableHead>
-            <TableHead className="min-w-[120px]">入司时间</TableHead>
             <TableHead className="min-w-[100px]">操作</TableHead>
           </TableRow>
         </TableHeader>
