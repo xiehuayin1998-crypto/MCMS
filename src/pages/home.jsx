@@ -400,10 +400,10 @@ export default function HomePage(props) {
                   <Calendar className="w-4 h-4 mr-2" />
                   会议室预定
                 </button>
-                <button onClick={() => handleNavigationClick('business', 'vehicle')} className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center">
+                {/* <button onClick={() => handleNavigationClick('business', 'vehicle')} className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center">
                   <Car className="w-4 h-4 mr-2" />
                   车辆管理
-                </button>
+                </button> */}
                 {/* <button onClick={() => handleNavigationClick('business', 'plan')} className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center">
                     <FileText className="w-4 h-4 mr-2" />
                     计划管理
