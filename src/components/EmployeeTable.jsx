@@ -241,7 +241,7 @@ export function EmployeeTable({
                     </Badge>)}
                   </div>
                 </TableCell> */}
-                {/* <TableCell>{formatDate(employee.join_date)}</TableCell>
+                {/* <TableCell>{formatDate(employee.join_date)}</TableCell> */}
                 <TableCell>
                   <div className="flex space-x-1">
                     <Button variant="ghost" size="sm" onClick={() => onEdit(employee)}>
@@ -251,7 +251,7 @@ export function EmployeeTable({
                       <Trash2 className="w-4 h-4" />
                     </Button>
                   </div>
-                </TableCell> */}
+                </TableCell>
               </TableRow>
               {isExpanded && <TableRow>
                 <TableCell colSpan={11} className="p-0">
