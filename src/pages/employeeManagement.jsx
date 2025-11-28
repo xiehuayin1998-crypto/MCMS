@@ -27,30 +27,29 @@ export default function EmployeeManagement(props) {
     role: ''
   });
   const [importExportOpen, setImportExportOpen] = useState(false);
-  const [isSearchReadonly, setIsSearchReadonly] = useState(false);
+  const [isReadOnlySearch, setIsReadOnlySearch] = useState(false);
   const {
     toast
   } = useToast();
 
-  // 从URL参数中获取搜索名称
-  const getSearchNameFromParams = () => {
-    try {
-      const params = $w.page.dataset.params || {};
-      return params.searchName || '';
-    } catch (error) {
-      return '';
-    }
-  };
+  // 检查URL参数，处理自动搜索
+  useEffect(() => {
+    const params = $w.page.dataset.params;
+    if (params && params.autoSearch) {
+      // 设置搜索条件为只读模式
+      setSearchParams(prev => ({
+        ...prev,
+        searchTerm: params.autoSearch
+      }));
+      setIsReadOnlySearch(params.readOnly === 'true');
 
-  // 检查是否只读模式
-  const getReadonlyFromParams = () => {
-    try {
-      const params = $w.page.dataset.params || {};
-      return params.readonly === 'true';
-    } catch (error) {
-      return false;
+      // 显示提示信息
+      toast({
+        title: "自动搜索",
+        description: `已自动搜索：${params.autoSearch}`
+      });
     }
-  };
+  }, [$w.page.dataset.params]);
 
   // 加载用户列表
   const loadEmployees = async (page = 1) => {
@@ -118,7 +117,12 @@ export default function EmployeeManagement(props) {
   // 处理搜索和筛选
   const handleSearch = (searchTerm, department, role) => {
     // 如果是只读模式，不允许修改搜索条件
-    if (isSearchReadonly) {
+    if (isReadOnlySearch) {
+      toast({
+        title: "操作受限",
+        description: "当前为查看模式，搜索条件不可修改",
+        variant: "destructive"
+      });
       return;
     }
     setSearchParams({
@@ -187,19 +191,19 @@ export default function EmployeeManagement(props) {
     loadEmployees(currentPage);
   };
 
-  // 初始化搜索参数
-  useEffect(() => {
-    const searchName = getSearchNameFromParams();
-    const readonly = getReadonlyFromParams();
-    if (searchName) {
-      setSearchParams({
-        searchTerm: searchName,
-        department: '',
-        role: ''
-      });
-      setIsSearchReadonly(readonly);
-    }
-  }, []);
+  // 退出只读模式
+  const handleExitReadOnlyMode = () => {
+    setIsReadOnlySearch(false);
+    setSearchParams({
+      searchTerm: '',
+      department: '',
+      role: ''
+    });
+    toast({
+      title: "退出查看模式",
+      description: "已退出只读查看模式"
+    });
+  };
 
   // 监听搜索参数变化
   useEffect(() => {
@@ -215,6 +219,7 @@ export default function EmployeeManagement(props) {
             <h1 className="text-3xl font-bold text-gray-900 flex items-center">
               <Users className="w-8 h-8 mr-3" />
               用户管理
+              {isReadOnlySearch && <span className="ml-2 text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded-full">查看模式</span>}
             </h1>
             <Button variant="outline" onClick={handleGoHome} className="flex items-center">
               <Home className="w-4 h-4 mr-2" />
@@ -222,6 +227,9 @@ export default function EmployeeManagement(props) {
             </Button>
           </div>
           <div className="flex space-x-3">
+            {isReadOnlySearch && <Button variant="outline" onClick={handleExitReadOnlyMode} className="flex items-center bg-gray-100 text-gray-800 hover:bg-gray-200">
+                退出查看模式
+              </Button>}
             <Button variant="outline" onClick={() => setImportExportOpen(true)} className="flex items-center bg-green-100 text-green-800 hover:bg-green-200">
               <Upload className="w-4 h-4 mr-2" />
               批量操作（JSON格式）
@@ -238,10 +246,13 @@ export default function EmployeeManagement(props) {
 
         <Card>
           <CardHeader>
-            <CardTitle>用户列表</CardTitle>
+            <CardTitle className="flex items-center justify-between">
+              <span>用户列表</span>
+              {isReadOnlySearch && <span className="text-sm text-blue-600 font-normal">当前为只读查看模式</span>}
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <EmployeeSearchFilter onSearch={handleSearch} initialSearchTerm={searchParams.searchTerm} isReadonly={isSearchReadonly} />
+            <EmployeeSearchFilter onSearch={handleSearch} readOnly={isReadOnlySearch} initialSearchTerm={isReadOnlySearch ? searchParams.searchTerm : ''} />
             <div className="mt-4">
               <EmployeeTable employees={filteredEmployees} onEdit={emp => {
               setSelectedEmployee(emp);
@@ -253,7 +264,8 @@ export default function EmployeeManagement(props) {
 
         <EmployeeEditDialog open={editDialogOpen} onOpenChange={setEditDialogOpen} employee={selectedEmployee} onSave={handleSave} />
         
-        <UserJsonImportExport open={importExportOpen} onOpenChange={setImportExportOpen} onComplete={handleImportExportComplete} $w={$w} />
+        <UserJsonImportExport open={importExportOpen} onOpenChange={setImportExportOpen} onComplete={handleImportExportComplete} $w={$w} // 传递$w参数
+      />
       </div>
     </div>;
 }
