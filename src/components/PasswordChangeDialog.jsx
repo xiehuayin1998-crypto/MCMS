@@ -123,25 +123,29 @@ export function PasswordChangeDialog({
         return;
       }
 
-      // 更新密码 - 修复filter格式，确保格式完全正确
+      // 更新密码 - 使用正确的参数格式
+      const updateParams = {
+        filter: {
+          where: {
+            _id: {
+              $eq: currentUser._id
+            }
+          }
+        },
+        data: {
+          password: newPassword
+        },
+        getCount: true
+      };
+      console.log('更新密码参数:', JSON.stringify(updateParams, null, 2));
+      console.log('当前用户ID:', currentUser._id);
+      console.log('新密码:', newPassword);
       const updateResult = await $w.cloud.callDataSource({
         dataSourceName: 'mc_users',
         methodName: 'wedaUpdateV2',
-        params: {
-          filter: {
-            where: {
-              _id: {
-                $eq: currentUser._id
-              }
-            }
-          },
-          data: {
-            password: newPassword
-          },
-          // 添加必要的参数
-          getCount: true
-        }
+        params: updateParams
       });
+      console.log('更新结果:', JSON.stringify(updateResult, null, 2));
       if (updateResult && updateResult.count > 0) {
         toast({
           title: "密码修改成功",
@@ -152,21 +156,31 @@ export function PasswordChangeDialog({
         throw new Error('更新失败，可能没有找到匹配的记录');
       }
     } catch (error) {
-      console.error('修改密码失败:', error);
-      // 检查错误类型，提供更具体的错误信息
+      console.error('修改密码失败 - 完整错误信息:');
+      console.error('错误类型:', typeof error);
+      console.error('错误对象:', error);
+      console.error('错误消息:', error.message);
+      console.error('错误堆栈:', error.stack);
+      console.error('错误代码:', error.code);
+      console.error('错误详情:', JSON.stringify(error, null, 2));
+
+      // 提供详细的错误信息
+      let errorMessage = '请稍后重试';
+      let errorTitle = '修改密码失败';
       if (error.message && error.message.includes('filter不能为空')) {
-        toast({
-          title: "参数错误",
-          description: "更新参数格式不正确，请联系管理员",
-          variant: "destructive"
-        });
-      } else {
-        toast({
-          title: "修改密码失败",
-          description: error.message || "请稍后重试",
-          variant: "destructive"
-        });
+        errorTitle = '参数格式错误';
+        errorMessage = '更新参数格式不正确，请检查参数配置';
+      } else if (error.message && error.message.includes('权限')) {
+        errorTitle = '权限不足';
+        errorMessage = '您没有修改密码的权限';
+      } else if (error.message) {
+        errorMessage = error.message;
       }
+      toast({
+        title: errorTitle,
+        description: errorMessage,
+        variant: "destructive"
+      });
     } finally {
       setLoading(false);
     }
