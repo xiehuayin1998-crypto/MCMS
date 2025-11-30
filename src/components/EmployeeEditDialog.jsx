@@ -54,6 +54,7 @@ export function EmployeeEditDialog({
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState({});
   const [showPassword, setShowPassword] = useState(false);
+  const [useCloudFunction, setUseCloudFunction] = useState(false); // 是否使用云函数
   const {
     toast
   } = useToast();
@@ -88,6 +89,30 @@ export function EmployeeEditDialog({
       return date.toISOString().split('T')[0];
     } catch (error) {
       return dateString;
+    }
+  };
+
+  // 检查云函数是否存在
+  const checkCloudFunction = async () => {
+    try {
+      const result = await $w.cloud.callFunction({
+        name: 'updateUser',
+        data: {
+          test: true
+        }
+      });
+      setUseCloudFunction(true);
+      return true;
+    } catch (error) {
+      if (error.code === 'FUNCTION_NOT_FOUND') {
+        console.warn('updateUser 云函数未找到，将使用 wedaUpdateV2');
+        setUseCloudFunction(false);
+        return false;
+      }
+      // 其他错误也使用 wedaUpdateV2
+      console.warn('云函数调用失败，将使用 wedaUpdateV2:', error);
+      setUseCloudFunction(false);
+      return false;
     }
   };
 
@@ -151,7 +176,7 @@ export function EmployeeEditDialog({
   useEffect(() => {
     if (open) {
       // 并行加载角色和部门数据
-      Promise.all([loadRoles(), loadDepartments()]);
+      Promise.all([loadRoles(), loadDepartments(), checkCloudFunction()]);
       if (employee) {
         // 编辑模式：从墨西哥时区恢复日期
         setFormData({
@@ -380,7 +405,7 @@ export function EmployeeEditDialog({
     });
   };
 
-  // 处理表单提交 - 使用 updateUser 云函数绕过权限限制
+  // 处理表单提交 - 智能选择使用云函数或 wedaUpdateV2
   const handleSubmit = async () => {
     if (!validateForm()) {
       toast({
@@ -445,21 +470,45 @@ export function EmployeeEditDialog({
       console.log('提交的数据:', updateData); // 调试日志
 
       if (employee && employee._id) {
-        // 更新现有用户 - 使用 updateUser 云函数绕过权限限制
-        const result = await $w.cloud.callFunction({
-          name: 'updateUser',
-          data: {
-            userId: employee._id,
-            updateData: updateData
+        // 更新现有用户 - 智能选择使用云函数或 wedaUpdateV2
+        let result;
+        if (useCloudFunction) {
+          // 使用 updateUser 云函数绕过权限限制
+          result = await $w.cloud.callFunction({
+            name: 'updateUser',
+            data: {
+              userId: employee._id,
+              updateData: updateData
+            }
+          });
+          if (result.result.success) {
+            toast({
+              title: "更新成功",
+              description: "用户信息已更新"
+            });
+          } else {
+            throw new Error(result.result.errorMessage || '更新失败');
           }
-        });
-        if (result.result.success) {
+        } else {
+          // 使用 wedaUpdateV2 作为备选方案
+          await $w.cloud.callDataSource({
+            dataSourceName: 'mc_users',
+            methodName: 'wedaUpdateV2',
+            params: {
+              data: updateData,
+              filter: {
+                where: {
+                  _id: {
+                    $eq: employee._id
+                  }
+                }
+              }
+            }
+          });
           toast({
             title: "更新成功",
             description: "用户信息已更新"
           });
-        } else {
-          throw new Error(result.result.errorMessage || '更新失败');
         }
       } else {
         // 创建新用户 - 仍然使用 wedaCreateV2，因为创建不需要绕过权限
