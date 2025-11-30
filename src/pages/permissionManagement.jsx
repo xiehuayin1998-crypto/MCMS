@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 // @ts-ignore;
 import { Card, CardContent, CardHeader, CardTitle, useToast, Button } from '@/components/ui';
 // @ts-ignore;
-import { Home, RefreshCw } from 'lucide-react';
+import { Home, RefreshCw, User, AlertCircle } from 'lucide-react';
 
 // @ts-ignore;
 import { UserHeader } from '@/components/UserHeader';
@@ -21,11 +21,13 @@ export default function PermissionManagementPage(props) {
   } = useToast();
   const [currentUser, setCurrentUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [errorInfo, setErrorInfo] = useState('');
 
   // 加载当前用户信息
   const loadCurrentUser = async () => {
     try {
       setIsLoading(true);
+      setErrorInfo('');
 
       // 优先从本地存储获取用户信息
       const storedUser = localStorage.getItem('currentUser');
@@ -42,12 +44,11 @@ export default function PermissionManagementPage(props) {
       }
 
       // 如果本地存储没有用户信息，从数据库加载
-      // 使用当前登录用户的用户名查询（登录时使用的是username）
+      // 关键修复：使用当前登录用户的用户名进行精确查询
       if (props.$w.auth.currentUser && props.$w.auth.currentUser.name) {
         console.log('当前登录用户信息:', props.$w.auth.currentUser);
 
-        // 直接使用当前登录用户的用户名查询数据库
-        // 注意：这里假设 $w.auth.currentUser.name 就是用户名
+        // 方法1：直接使用当前登录用户的用户名查询
         const result = await $w.cloud.callDataSource({
           dataSourceName: 'mc_users',
           methodName: 'wedaGetRecordsV2',
@@ -64,45 +65,58 @@ export default function PermissionManagementPage(props) {
             }
           }
         });
+        console.log('用户查询结果:', result);
         if (result.records && result.records.length > 0) {
           const user = result.records[0];
           console.log('查询到用户信息:', user);
-          setCurrentUser(user);
-          localStorage.setItem('currentUser', JSON.stringify({
-            userId: user._id,
-            name: user.name,
-            username: user.username,
-            isAdmin: user.isAdmin,
-            roles: user.roles || [],
-            permissions: user.permissions || '',
-            department: user.department
-          }));
-          return;
+
+          // 验证用户身份
+          if (user.username === props.$w.auth.currentUser.name) {
+            setCurrentUser(user);
+            localStorage.setItem('currentUser', JSON.stringify({
+              userId: user._id,
+              name: user.name,
+              username: user.username,
+              isAdmin: user.isAdmin,
+              roles: user.roles || [],
+              permissions: user.permissions || '',
+              department: user.department
+            }));
+            return;
+          } else {
+            setErrorInfo(`用户身份验证失败：期望用户名 "${props.$w.auth.currentUser.name}"，实际用户名 "${user.username}"`);
+          }
         }
 
-        // 如果查询不到用户，显示错误信息
+        // 如果查询不到用户，显示详细的错误信息
+        const errorMessage = `未找到用户名为 "${props.$w.auth.currentUser.name}" 的用户记录。请检查：\n1. 用户名是否正确\n2. 用户是否存在于数据库中\n3. 数据库连接是否正常`;
         console.error('未找到匹配的用户记录:', {
           currentUserName: props.$w.auth.currentUser.name,
           queryResult: result.records
         });
+        setErrorInfo(errorMessage);
         toast({
           title: "用户信息错误",
-          description: `未找到用户 "${props.$w.auth.currentUser.name}" 的详细信息，请联系管理员`,
+          description: `未找到用户 "${props.$w.auth.currentUser.name}" 的详细信息`,
           variant: "destructive"
         });
       } else {
+        const errorMessage = "当前用户信息为空，请重新登录";
         console.error('当前用户信息为空:', props.$w.auth.currentUser);
+        setErrorInfo(errorMessage);
         toast({
           title: "用户信息错误",
-          description: "当前用户信息为空，请重新登录",
+          description: errorMessage,
           variant: "destructive"
         });
       }
     } catch (error) {
+      const errorMessage = `加载用户信息失败：${error.message || "未知错误"}`;
       console.error('加载用户信息失败:', error);
+      setErrorInfo(errorMessage);
       toast({
         title: "加载失败",
-        description: "无法加载用户信息：" + (error.message || "未知错误"),
+        description: errorMessage,
         variant: "destructive"
       });
     } finally {
@@ -110,10 +124,11 @@ export default function PermissionManagementPage(props) {
     }
   };
 
-  // 刷新用户数据（不删除本地存储）
+  // 刷新用户数据
   const refreshUserData = async () => {
     try {
       setIsLoading(true);
+      setErrorInfo('');
 
       // 直接使用当前登录用户的用户名查询数据库
       if (props.$w.auth.currentUser && props.$w.auth.currentUser.name) {
@@ -136,7 +151,7 @@ export default function PermissionManagementPage(props) {
         if (result.records && result.records.length > 0) {
           const user = result.records[0];
           setCurrentUser(user);
-          // 更新本地存储，不删除原有数据
+          // 更新本地存储
           localStorage.setItem('currentUser', JSON.stringify({
             userId: user._id,
             name: user.name,
@@ -177,6 +192,13 @@ export default function PermissionManagementPage(props) {
       params: {}
     });
   };
+
+  // 清除本地存储并重新登录
+  const clearAndRelogin = () => {
+    localStorage.removeItem('currentUser');
+    localStorage.removeItem('hasSeenNotifications');
+    goToLogin();
+  };
   useEffect(() => {
     loadCurrentUser();
   }, []);
@@ -189,14 +211,18 @@ export default function PermissionManagementPage(props) {
       </div>;
   }
 
-  // 如果当前用户为空，显示错误页面
+  // 如果当前用户为空，显示详细的错误页面
   if (!currentUser) {
     return <div className="min-h-screen bg-gray-50 flex items-center justify-center" style={style}>
         <Card className="max-w-md w-full mx-4">
           <CardContent className="p-8 text-center">
+            <AlertCircle className="w-16 h-16 mx-auto text-red-500 mb-4" />
             <div className="text-red-600 text-lg font-semibold mb-4">
               用户信息加载失败
             </div>
+            {errorInfo && <div className="text-left bg-red-50 border border-red-200 rounded p-3 mb-4">
+                <p className="text-sm text-red-800 whitespace-pre-line">{errorInfo}</p>
+              </div>}
             <p className="text-gray-600 mb-6">
               无法加载当前用户信息，请重新登录或联系管理员。
             </p>
@@ -205,8 +231,15 @@ export default function PermissionManagementPage(props) {
                 <RefreshCw className="w-4 h-4 mr-2" />
                 重新加载
               </Button>
-              <Button variant="outline" onClick={goToLogin} className="w-full">
-                返回登录页面
+              <Button variant="outline" onClick={clearAndRelogin} className="w-full flex items-center justify-center">
+                <User className="w-4 h-4 mr-2" />
+                重新登录
+              </Button>
+              <Button variant="outline" onClick={() => $w.utils.navigateTo({
+              pageId: 'home',
+              params: {}
+            })} className="w-full">
+                返回首页
               </Button>
             </div>
           </CardContent>
@@ -223,7 +256,10 @@ export default function PermissionManagementPage(props) {
             <div>
               <h1 className="text-3xl font-bold text-gray-900">权限管理系统</h1>
               <p className="text-gray-600 mt-2">管理用户角色和权限分配</p>
-              <p className="text-sm text-gray-500 mt-1">当前用户: {currentUser.name} ({currentUser.username})</p>
+              <p className="text-sm text-gray-500 mt-1">
+                当前用户: {currentUser.name} ({currentUser.username}) - 
+                {currentUser.isAdmin ? ' 管理员' : ' 普通用户'}
+              </p>
             </div>
             <div className="flex space-x-2">
               <Button variant="outline" onClick={refreshUserData} className="flex items-center space-x-2" disabled={isLoading}>
