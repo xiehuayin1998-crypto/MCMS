@@ -7,8 +7,8 @@ import { User, Mail, Phone, Building, Calendar, MapPin, Briefcase, Shield } from
 
 export function EmployeeEditDialog({
   employee,
-  departments,
-  roles,
+  departments = [],
+  roles = [],
   open,
   onOpenChange,
   onEmployeeUpdated,
@@ -182,6 +182,52 @@ export function EmployeeEditDialog({
       setIsLoading(false);
     }
   };
+
+  // 安全渲染部门选择器
+  const renderDepartmentSelect = () => {
+    if (!Array.isArray(departments) || departments.length === 0) {
+      return <Input id="edit-department" value={formData.department} onChange={e => handleInputChange('department', e.target.value)} placeholder="请输入部门" />;
+    }
+    return <Select value={formData.department} onValueChange={value => handleInputChange('department', value)}>
+        <SelectTrigger>
+          <SelectValue placeholder="请选择部门" />
+        </SelectTrigger>
+        <SelectContent>
+          {departments.map(dept => <SelectItem key={dept._id} value={dept.name}>
+              {dept.name}
+            </SelectItem>)}
+        </SelectContent>
+      </Select>;
+  };
+
+  // 安全渲染角色选择器
+  const renderRoleSelector = () => {
+    if (!Array.isArray(roles) || roles.length === 0) {
+      return <div className="text-sm text-gray-500">
+          暂无可用角色
+        </div>;
+    }
+    return <div className="flex flex-wrap gap-2">
+        {roles.map(role => <div key={role._id} className="flex items-center space-x-2">
+            <input type="checkbox" id={`role-${role._id}`} checked={formData.roles.includes(role._id)} onChange={e => {
+          if (e.target.checked) {
+            setFormData(prev => ({
+              ...prev,
+              roles: [...prev.roles, role._id]
+            }));
+          } else {
+            setFormData(prev => ({
+              ...prev,
+              roles: prev.roles.filter(id => id !== role._id)
+            }));
+          }
+        }} className="rounded border-gray-300" />
+            <label htmlFor={`role-${role._id}`} className="text-sm">
+              {role.roleName}
+            </label>
+          </div>)}
+      </div>;
+  };
   return <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
@@ -234,16 +280,7 @@ export function EmployeeEditDialog({
                 <Building className="w-4 h-4 mr-2" />
                 部门
               </Label>
-              <Select value={formData.department} onValueChange={value => handleInputChange('department', value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="请选择部门" />
-                </SelectTrigger>
-                <SelectContent>
-                  {departments.map(dept => <SelectItem key={dept._id} value={dept.name}>
-                      {dept.name}
-                    </SelectItem>)}
-                </SelectContent>
-              </Select>
+              {renderDepartmentSelect()}
             </div>
             
             <div className="space-y-2">
@@ -279,6 +316,14 @@ export function EmployeeEditDialog({
               地址
             </Label>
             <Input id="edit-address" value={formData.address} onChange={e => handleInputChange('address', e.target.value)} placeholder="请输入地址" />
+          </div>
+
+          <div className="space-y-2">
+            <Label className="flex items-center">
+              <Shield className="w-4 h-4 mr-2" />
+              角色
+            </Label>
+            {renderRoleSelector()}
           </div>
 
           <div className="space-y-2">
