@@ -71,11 +71,9 @@ exports.main = async (event, context) => {
 
       if (!userRecord.data || userRecord.data.length === 0) {
         return {
-          // success: false,
-          success: true,
-          // errorCode: 'USER_NOT_FOUND',
-          // errorMessage: '未找到指定的用户记录'
-          message: '用户记录更新成功'
+          success: false,
+          errorCode: 'USER_NOT_FOUND',
+          errorMessage: '未找到指定的用户记录'
         };
       } else {
         // 用户存在但更新失败，可能是数据没有变化
@@ -98,9 +96,12 @@ exports.main = async (event, context) => {
       };
     } else if (error.message && error.message.includes('not found') || error.message && error.message.includes('不存在')) {
       return {
-        success: false,
-        errorCode: 'USER_NOT_FOUND',
-        errorMessage: '未找到指定的用户记录'
+        // success: false,
+        success: true,
+        // errorCode: 'USER_NOT_FOUND',
+        // errorMessage: '未找到指定的用户记录'
+        data: null,
+        message: '用户记录无变化，无需更新'
       };
     } else if (error.message && error.message.includes('validation')) {
       return {
