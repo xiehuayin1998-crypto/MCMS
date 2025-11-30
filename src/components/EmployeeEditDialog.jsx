@@ -96,7 +96,7 @@ export function EmployeeEditDialog({
   const checkCloudFunction = async () => {
     try {
       const result = await $w.cloud.callFunction({
-        name: 'updateUser',
+        name: 'update-user',
         data: {
           test: true
         }
@@ -105,7 +105,7 @@ export function EmployeeEditDialog({
       return true;
     } catch (error) {
       if (error.code === 'FUNCTION_NOT_FOUND') {
-        console.warn('updateUser 云函数未找到，将使用 wedaUpdateV2');
+        console.warn('update-user 云函数未找到，将使用 wedaUpdateV2');
         setUseCloudFunction(false);
         return false;
       }
@@ -473,9 +473,9 @@ export function EmployeeEditDialog({
         // 更新现有用户 - 智能选择使用云函数或 wedaUpdateV2
         let result;
         if (useCloudFunction) {
-          // 使用 updateUser 云函数绕过权限限制
+          // 使用 update-user 云函数绕过权限限制
           result = await $w.cloud.callFunction({
-            name: 'updateUser',
+            name: 'update-user',
             data: {
               userId: employee._id,
               updateData: updateData
