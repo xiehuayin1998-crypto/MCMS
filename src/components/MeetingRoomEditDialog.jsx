@@ -9,7 +9,8 @@ export function MeetingRoomEditDialog({
   room,
   open,
   onOpenChange,
-  onRoomUpdated
+  onRoomUpdated,
+  $w
 }) {
   const [isLoading, setIsLoading] = React.useState(false);
   const [formData, setFormData] = React.useState({
@@ -23,9 +24,33 @@ export function MeetingRoomEditDialog({
     contactEmail: '',
     status: 'available'
   });
+  const [useCloudFunction, setUseCloudFunction] = React.useState(false);
   const {
     toast
   } = useToast();
+
+  // 检查云函数是否存在
+  const checkCloudFunction = async () => {
+    try {
+      const result = await $w.cloud.callFunction({
+        name: 'update-user',
+        data: {
+          test: true
+        }
+      });
+      setUseCloudFunction(true);
+      return true;
+    } catch (error) {
+      if (error.code === 'FUNCTION_NOT_FOUND') {
+        console.warn('update-user 云函数未找到，将使用 wedaUpdateV2');
+        setUseCloudFunction(false);
+        return false;
+      }
+      console.warn('云函数调用失败，将使用 wedaUpdateV2:', error);
+      setUseCloudFunction(false);
+      return false;
+    }
+  };
 
   // 当 room 数据变化时更新表单
   React.useEffect(() => {
@@ -43,6 +68,13 @@ export function MeetingRoomEditDialog({
       });
     }
   }, [room]);
+
+  // 初始化时检查云函数
+  React.useEffect(() => {
+    if (open) {
+      checkCloudFunction();
+    }
+  }, [open]);
   const handleInputChange = (field, value) => {
     setFormData(prev => ({
       ...prev,
@@ -69,31 +101,53 @@ export function MeetingRoomEditDialog({
     }
     setIsLoading(true);
     try {
-      const result = await window.$w.cloud.callDataSource({
-        dataSourceName: 'mc_meeting_room',
-        methodName: 'wedaUpdateV2',
-        params: {
+      const updateData = {
+        name: formData.name.trim(),
+        capacity: parseInt(formData.capacity),
+        location: formData.location.trim(),
+        description: formData.description.trim(),
+        equipment: formData.equipment.trim(),
+        contactPerson: formData.contactPerson.trim(),
+        contactPhone: formData.contactPhone.trim(),
+        contactEmail: formData.contactEmail.trim(),
+        status: formData.status,
+        updatedAt: Date.now()
+      };
+      let result;
+      if (useCloudFunction) {
+        // 使用 update-user 云函数
+        const cloudResult = await $w.cloud.callFunction({
+          name: 'update-user',
           data: {
-            name: formData.name.trim(),
-            capacity: parseInt(formData.capacity),
-            location: formData.location.trim(),
-            description: formData.description.trim(),
-            equipment: formData.equipment.trim(),
-            contactPerson: formData.contactPerson.trim(),
-            contactPhone: formData.contactPhone.trim(),
-            contactEmail: formData.contactEmail.trim(),
-            status: formData.status,
-            updatedAt: Date.now() // 使用时间戳格式
-          },
-          filter: {
-            where: {
-              _id: {
-                $eq: room._id
+            userId: room._id,
+            // 注意：这里使用会议室ID作为userId
+            updateData: updateData
+          }
+        });
+        if (cloudResult.result.success) {
+          result = {
+            count: 1
+          };
+        } else {
+          throw new Error(cloudResult.result.errorMessage || '更新失败');
+        }
+      } else {
+        // 使用 wedaUpdateV2 作为备选方案
+        result = await $w.cloud.callDataSource({
+          dataSourceName: 'mc_meeting_room',
+          methodName: 'wedaUpdateV2',
+          params: {
+            data: updateData,
+            filter: {
+              where: {
+                _id: {
+                  $eq: room._id
+                }
               }
             }
           }
-        }
-      });
+        });
+      }
       if (result.count > 0) {
         toast({
           title: "更新成功",
