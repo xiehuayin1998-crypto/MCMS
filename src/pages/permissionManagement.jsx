@@ -42,12 +42,12 @@ export default function PermissionManagementPage(props) {
       }
 
       // 如果本地存储没有用户信息，从数据库加载
-      // 首先尝试使用当前登录用户的用户名查询
+      // 使用当前登录用户的用户名进行精确查询
       if (props.$w.auth.currentUser && props.$w.auth.currentUser.name) {
         console.log('当前登录用户:', props.$w.auth.currentUser);
 
-        // 方法1: 使用用户名查询
-        const resultByUsername = await $w.cloud.callDataSource({
+        // 使用用户名进行精确查询，避免查询到错误的用户
+        const result = await $w.cloud.callDataSource({
           dataSourceName: 'mc_users',
           methodName: 'wedaGetRecordsV2',
           params: {
@@ -63,60 +63,40 @@ export default function PermissionManagementPage(props) {
             }
           }
         });
-        if (resultByUsername.records && resultByUsername.records.length > 0) {
-          const user = resultByUsername.records[0];
-          console.log('通过用户名查询到用户:', user);
-          setCurrentUser(user);
-          localStorage.setItem('currentUser', JSON.stringify({
-            userId: user._id,
-            name: user.name,
-            username: user.username,
-            isAdmin: user.isAdmin,
-            roles: user.roles || [],
-            permissions: user.permissions || '',
-            department: user.department
-          }));
-          return;
-        }
+        if (result.records && result.records.length > 0) {
+          const user = result.records[0];
+          console.log('查询到用户:', user);
 
-        // 方法2: 使用姓名查询
-        const resultByName = await $w.cloud.callDataSource({
-          dataSourceName: 'mc_users',
-          methodName: 'wedaGetRecordsV2',
-          params: {
-            filter: {
-              where: {
-                name: {
-                  $eq: props.$w.auth.currentUser.name
-                }
-              }
-            },
-            select: {
-              $master: true
-            }
+          // 验证用户身份，确保不会错误地加载其他用户
+          if (user.username === props.$w.auth.currentUser.name) {
+            setCurrentUser(user);
+            localStorage.setItem('currentUser', JSON.stringify({
+              userId: user._id,
+              name: user.name,
+              username: user.username,
+              isAdmin: user.isAdmin,
+              roles: user.roles || [],
+              permissions: user.permissions || '',
+              department: user.department
+            }));
+          } else {
+            console.error('用户身份验证失败:', {
+              expected: props.$w.auth.currentUser.name,
+              actual: user.username
+            });
+            toast({
+              title: "用户身份验证失败",
+              description: "无法验证当前用户身份，请重新登录",
+              variant: "destructive"
+            });
           }
-        });
-        if (resultByName.records && resultByName.records.length > 0) {
-          const user = resultByName.records[0];
-          console.log('通过姓名查询到用户:', user);
-          setCurrentUser(user);
-          localStorage.setItem('currentUser', JSON.stringify({
-            userId: user._id,
-            name: user.name,
-            username: user.username,
-            isAdmin: user.isAdmin,
-            roles: user.roles || [],
-            permissions: user.permissions || '',
-            department: user.department
-          }));
           return;
         }
 
-        // 如果两种方法都查询不到用户，显示错误信息
+        // 如果查询不到用户，显示错误信息
         console.error('未找到匹配的用户记录:', {
           currentUserName: props.$w.auth.currentUser.name,
-          usernameQuery: resultByUsername.records,
-          nameQuery: resultByName.records
+          queryResult: result.records
         });
         toast({
           title: "用户信息错误",
@@ -143,10 +123,28 @@ export default function PermissionManagementPage(props) {
     }
   };
 
-  // 清除本地存储并重新加载用户信息
+  // 安全地重新加载用户信息
   const reloadUser = async () => {
-    localStorage.removeItem('currentUser');
-    await loadCurrentUser();
+    try {
+      setIsLoading(true);
+
+      // 清除本地存储
+      localStorage.removeItem('currentUser');
+
+      // 重新加载用户信息，确保使用正确的查询条件
+      await loadCurrentUser();
+      toast({
+        title: "刷新成功",
+        description: "用户信息已刷新"
+      });
+    } catch (error) {
+      console.error('刷新用户信息失败:', error);
+      toast({
+        title: "刷新失败",
+        description: "刷新用户信息时发生错误",
+        variant: "destructive"
+      });
+    }
   };
 
   // 跳转到登录页面
@@ -202,11 +200,14 @@ export default function PermissionManagementPage(props) {
             <div>
               <h1 className="text-3xl font-bold text-gray-900">权限管理系统</h1>
               <p className="text-gray-600 mt-2">管理用户角色和权限分配</p>
-              <p className="text-sm text-gray-500 mt-1">当前用户: {currentUser.name} ({currentUser.username})</p>
+              <p className="text-sm text-gray-500 mt-1">
+                当前用户: {currentUser.name} ({currentUser.username}) - 
+                {currentUser.isAdmin ? ' 管理员' : ' 普通用户'}
+              </p>
             </div>
             <div className="flex space-x-2">
-              <Button variant="outline" onClick={reloadUser} className="flex items-center space-x-2">
-                <RefreshCw className="w-4 h-4" />
+              <Button variant="outline" onClick={reloadUser} className="flex items-center space-x-2" disabled={isLoading}>
+                <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
                 <span>刷新数据</span>
               </Button>
               <Button variant="outline" onClick={() => $w.utils.navigateTo({
