@@ -34,7 +34,7 @@ export default function PermissionManagementPage(props) {
         return;
       }
 
-      // 从数据库加载用户信息
+      // 从数据库加载用户信息 - 修复查询字段：使用 name 而不是 username
       if (props.$w.auth.currentUser && props.$w.auth.currentUser.name) {
         const result = await $w.cloud.callDataSource({
           dataSourceName: 'mc_users',
@@ -42,7 +42,7 @@ export default function PermissionManagementPage(props) {
           params: {
             filter: {
               where: {
-                username: {
+                name: {
                   $eq: props.$w.auth.currentUser.name
                 }
               }
@@ -64,25 +64,41 @@ export default function PermissionManagementPage(props) {
             permissions: user.permissions || '',
             department: user.department
           }));
+        } else {
+          // 如果查询不到用户，显示错误信息
+          toast({
+            title: "用户信息错误",
+            description: "未找到当前用户的详细信息，请联系管理员",
+            variant: "destructive"
+          });
         }
       }
     } catch (error) {
       console.error('加载用户信息失败:', error);
       toast({
         title: "加载失败",
-        description: "无法加载用户信息",
+        description: "无法加载用户信息：" + (error.message || "未知错误"),
         variant: "destructive"
       });
     } finally {
       setIsLoading(false);
     }
   };
+
+  // 清除本地存储并重新加载用户信息
+  const reloadUser = async () => {
+    localStorage.removeItem('currentUser');
+    await loadCurrentUser();
+  };
   useEffect(() => {
     loadCurrentUser();
   }, []);
   if (isLoading) {
     return <div className="min-h-screen bg-gray-50 flex items-center justify-center" style={style}>
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">正在加载用户信息...</p>
+        </div>
       </div>;
   }
   return <div className="min-h-screen bg-gray-50" style={style}>
@@ -96,13 +112,19 @@ export default function PermissionManagementPage(props) {
               <h1 className="text-3xl font-bold text-gray-900">权限管理系统</h1>
               <p className="text-gray-600 mt-2">管理用户角色和权限分配</p>
             </div>
-            <Button variant="outline" onClick={() => $w.utils.navigateTo({
-            pageId: 'home',
-            params: {}
-          })} className="flex items-center space-x-2">
-              <Home className="w-4 h-4" />
-              <span>返回首页</span>
-            </Button>
+            <div className="flex space-x-2">
+              <Button variant="outline" onClick={reloadUser} className="flex items-center space-x-2">
+                <Home className="w-4 h-4" />
+                <span>刷新数据</span>
+              </Button>
+              <Button variant="outline" onClick={() => $w.utils.navigateTo({
+              pageId: 'home',
+              params: {}
+            })} className="flex items-center space-x-2">
+                <Home className="w-4 h-4" />
+                <span>返回首页</span>
+              </Button>
+            </div>
           </div>
         </div>
 
@@ -123,7 +145,7 @@ export default function PermissionManagementPage(props) {
                 </Button>
               </CardContent>
             </Card>}>
-          <PermissionManagement user={currentUser} />
+          <PermissionManagement user={currentUser} $w={$w} />
         </PermissionGuard>
       </div>
     </div>;
