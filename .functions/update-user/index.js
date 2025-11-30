@@ -39,7 +39,7 @@ exports.main = async (event, context) => {
       .update(updateData);
 
     // 根据更新结果判断操作是否成功
-    if (updateResult.updated > 0) {
+    if (updateResult.updated <= 0) {
       // 更新成功，获取更新后的用户信息
       const updatedUser = await db.collection('mc_users')
         .where({

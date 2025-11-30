@@ -1,252 +1,267 @@
 // @ts-ignore;
 import React, { useState, useEffect } from 'react';
 // @ts-ignore;
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Button, Badge, useToast, AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Button, Badge, useToast, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui';
 // @ts-ignore;
-import { Edit, Trash2, User, Mail, Phone, Building, Shield } from 'lucide-react';
+import { Edit, Trash2, Eye, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 
-// @ts-ignore;
-import { EmployeeEditDialog } from './EmployeeEditDialog';
 export function EmployeeTable({
-  employees = [],
-  departments = [],
-  roles = [],
-  onEmployeeUpdated,
-  onEmployeeDeleted,
-  $w
+  employees,
+  onEdit,
+  onDelete,
+  loading,
+  totalCount,
+  currentPage,
+  pageSize,
+  onPageChange
 }) {
-  const [editingEmployee, setEditingEmployee] = useState(null);
-  const [deletingEmployee, setDeletingEmployee] = useState(null);
-  const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [useCloudFunction, setUseCloudFunction] = useState(false);
+  const [roles, setRoles] = useState([]);
+  const [expandedRows, setExpandedRows] = useState(new Set());
   const {
     toast
   } = useToast();
 
-  // 检查云函数是否存在
-  const checkCloudFunction = async () => {
+  // 加载角色列表
+  const loadRoles = async () => {
     try {
-      const result = await $w.cloud.callFunction({
-        name: 'update-user',
-        data: {
-          test: true
+      const result = await $w.cloud.callDataSource({
+        dataSourceName: 'mc_roles',
+        methodName: 'wedaGetRecordsV2',
+        params: {
+          select: {
+            $master: true
+          }
         }
       });
-      setUseCloudFunction(true);
-      return true;
+      setRoles(result.records || []);
     } catch (error) {
-      if (error.code === 'FUNCTION_NOT_FOUND') {
-        console.warn('update-user 云函数未找到，将使用 wedaUpdateV2');
-        setUseCloudFunction(false);
-        return false;
-      }
-      console.warn('云函数调用失败，将使用 wedaUpdateV2:', error);
-      setUseCloudFunction(false);
-      return false;
-    }
-  };
-  useEffect(() => {
-    checkCloudFunction();
-  }, []);
-  const handleEdit = employee => {
-    setEditingEmployee(employee);
-    setEditDialogOpen(true);
-  };
-  const handleDelete = employee => {
-    setDeletingEmployee(employee);
-    setDeleteDialogOpen(true);
-  };
-  const confirmDelete = async () => {
-    if (!deletingEmployee) return;
-    try {
-      let result;
-      if (useCloudFunction) {
-        // 使用 update-user 云函数删除用户（软删除）
-        const cloudResult = await $w.cloud.callFunction({
-          name: 'update-user',
-          data: {
-            userId: deletingEmployee._id,
-            updateData: {
-              status: 'deleted',
-              deletedAt: new Date().getTime()
-            }
-          }
-        });
-        if (cloudResult.result.success) {
-          result = {
-            count: 1
-          };
-        } else {
-          const errorMessage = cloudResult.result.errorMessage || '删除失败';
-          if (errorMessage.includes('未找到') || errorMessage.includes('not found')) {
-            throw new Error('未找到指定的用户记录');
-          }
-          throw new Error(errorMessage);
-        }
-      } else {
-        // 使用 wedaDeleteV2 作为备选方案
-        result = await $w.cloud.callDataSource({
-          dataSourceName: 'mc_users',
-          methodName: 'wedaDeleteV2',
-          params: {
-            filter: {
-              where: {
-                _id: {
-                  $eq: deletingEmployee._id
-                }
-              }
-            }
-          }
-        });
-      }
-      if (result.count > 0) {
-        toast({
-          title: "删除成功",
-          description: `员工 "${deletingEmployee.name}" 已删除`
-        });
-        onEmployeeDeleted && onEmployeeDeleted();
-      } else {
-        throw new Error('未找到指定的用户记录');
-      }
-    } catch (error) {
-      console.error('删除员工失败:', error);
-      const errorMessage = error.message || '删除员工时发生错误';
       toast({
-        title: "删除失败",
-        description: errorMessage,
+        title: "加载角色失败",
+        description: "无法加载角色列表",
         variant: "destructive"
       });
-    } finally {
-      setDeleteDialogOpen(false);
-      setDeletingEmployee(null);
     }
   };
 
-  // 安全获取部门名称
-  const getDepartmentName = departmentId => {
-    if (!Array.isArray(departments) || !departmentId) {
-      return '未分配';
-    }
-    const dept = departments.find(d => d._id === departmentId);
-    return dept ? dept.name : '未分配';
-  };
-
-  // 安全获取角色名称
+  // 获取角色名称
   const getRoleNames = roleIds => {
-    if (!Array.isArray(roleIds) || !Array.isArray(roles) || roles.length === 0) {
-      return [];
-    }
-    return roleIds.map(roleId => {
+    if (!Array.isArray(roleIds)) return [];
+    return roleIds.filter(id => typeof id === 'string').map(roleId => {
       const role = roles.find(r => r._id === roleId);
-      return role ? role.roleName : '未知角色';
+      return role ? role.role_name : '未知角色';
     });
   };
 
-  // 安全渲染员工列表
-  const renderEmployeeList = () => {
-    if (!Array.isArray(employees) || employees.length === 0) {
-      return <TableRow>
-          <TableCell colSpan={10} className="text-center py-8 text-gray-500">
-            暂无员工数据
-          </TableCell>
-        </TableRow>;
+  // 切换展开/收起
+  const toggleExpand = employeeId => {
+    const newExpanded = new Set(expandedRows);
+    if (newExpanded.has(employeeId)) {
+      newExpanded.delete(employeeId);
+    } else {
+      newExpanded.add(employeeId);
     }
-    return employees.map(employee => <TableRow key={employee._id}>
-        <TableCell className="font-medium">
-          <div className="flex items-center space-x-2">
-            <User className="w-4 h-4 text-gray-500" />
-            <span>{employee.name}</span>
-          </div>
-        </TableCell>
-        <TableCell>{employee.username}</TableCell>
-        <TableCell>
-          <div className="flex items-center space-x-1">
-            <Mail className="w-4 h-4 text-gray-500" />
-            <span>{employee.email}</span>
-          </div>
-        </TableCell>
-        <TableCell>
-          <div className="flex items-center space-x-1">
-            <Phone className="w-4 h-4 text-gray-500" />
-            <span>{employee.phone}</span>
-          </div>
-        </TableCell>
-        <TableCell>
-          <div className="flex items-center space-x-1">
-            <Building className="w-4 h-4 text-gray-500" />
-            <span>{getDepartmentName(employee.department)}</span>
-          </div>
-        </TableCell>
-        <TableCell>{employee.position}</TableCell>
-        <TableCell>{employee.employee_number}</TableCell>
-        <TableCell>
-          <Badge variant={employee.status === 'active' ? 'default' : employee.status === 'inactive' ? 'destructive' : 'secondary'}>
-            {employee.status === 'active' ? '在职' : employee.status === 'inactive' ? '离职' : '暂停'}
-          </Badge>
-        </TableCell>
-        <TableCell>
-          <div className="flex flex-wrap gap-1">
-            {getRoleNames(employee.roles).map(roleName => <Badge key={roleName} variant="outline" className="text-xs">
-                <Shield className="w-3 h-3 mr-1" />
-                {roleName}
-              </Badge>)}
-          </div>
-        </TableCell>
-        <TableCell>
-          <div className="flex space-x-2">
-            <Button variant="ghost" size="sm" onClick={() => handleEdit(employee)}>
-              <Edit className="w-4 h-4" />
-            </Button>
-            <Button variant="ghost" size="sm" className="text-red-600" onClick={() => handleDelete(employee)}>
-              <Trash2 className="w-4 h-4" />
-            </Button>
-          </div>
-        </TableCell>
-      </TableRow>);
+    setExpandedRows(newExpanded);
   };
-  return <div className="space-y-4">
-      <div className="overflow-x-auto">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>姓名</TableHead>
-              <TableHead>用户名</TableHead>
-              <TableHead>邮箱</TableHead>
-              <TableHead>电话</TableHead>
-              <TableHead>部门</TableHead>
-              <TableHead>职位</TableHead>
-              <TableHead>工号</TableHead>
-              <TableHead>状态</TableHead>
-              <TableHead>角色</TableHead>
-              <TableHead>操作</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {renderEmployeeList()}
-          </TableBody>
-        </Table>
+
+  // 格式化日期显示
+  const formatDate = dateString => {
+    if (!dateString) return '-';
+    return new Date(dateString).toLocaleDateString('zh-CN');
+  };
+
+  // 计算分页信息
+  const totalPages = Math.ceil(totalCount / pageSize);
+  const startIndex = (currentPage - 1) * pageSize + 1;
+  const endIndex = Math.min(currentPage * pageSize, totalCount);
+
+  // 处理页码变化
+  const handlePageChange = newPage => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      onPageChange(newPage);
+    }
+  };
+
+  // 渲染分页控件
+  const renderPagination = () => {
+    if (totalPages <= 1) return null;
+    const pageNumbers = [];
+    const maxVisiblePages = 5;
+    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+    if (endPage - startPage < maxVisiblePages - 1) {
+      startPage = Math.max(1, endPage - maxVisiblePages + 1);
+    }
+    for (let i = startPage; i <= endPage; i++) {
+      pageNumbers.push(i);
+    }
+    return <div className="flex items-center justify-between px-4 py-3 border-t">
+      <div className="text-sm text-gray-700">
+        显示第 {startIndex} 到 {endIndex} 条，共 {totalCount} 条记录
       </div>
+      <div className="flex items-center space-x-2">
+        <Button variant="outline" size="sm" onClick={() => handlePageChange(1)} disabled={currentPage === 1}>
+          <ChevronsLeft className="w-4 h-4" />
+        </Button>
+        <Button variant="outline" size="sm" onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1}>
+          <ChevronLeft className="w-4 h-4" />
+        </Button>
 
-      {/* 编辑对话框 */}
-      <EmployeeEditDialog open={editDialogOpen} onOpenChange={setEditDialogOpen} employee={editingEmployee} departments={departments} roles={roles} onEmployeeUpdated={onEmployeeUpdated} $w={$w} />
+        {pageNumbers.map(page => <Button key={page} variant={currentPage === page ? "default" : "outline"} size="sm" onClick={() => handlePageChange(page)}>
+          {page}
+        </Button>)}
 
-      {/* 删除确认对话框 */}
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>确认删除</AlertDialogTitle>
-            <AlertDialogDescription>
-              确定要删除员工 "{deletingEmployee?.name}" 吗？此操作不可撤销。
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>取消</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete} className="bg-red-600 hover:bg-red-700">
-              确认删除
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+        <Button variant="outline" size="sm" onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages}>
+          <ChevronRight className="w-4 h-4" />
+        </Button>
+        <Button variant="outline" size="sm" onClick={() => handlePageChange(totalPages)} disabled={currentPage === totalPages}>
+          <ChevronsRight className="w-4 h-4" />
+        </Button>
+      </div>
     </div>;
+  };
+
+  // 渲染展开详情
+  const renderExpandedDetails = employee => <div className="bg-gray-50 p-4 rounded-lg mt-2">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+      <div>
+        <h4 className="font-semibold text-gray-700 mb-2">基本信息</h4>
+        <div className="space-y-1">
+          <p><span className="text-gray-600">姓名：</span>{employee.name || '-'}</p>
+          <p><span className="text-gray-600">用户名：</span>{employee.username || '-'}</p>
+          <p><span className="text-gray-600">性别：</span>{employee.sex || '-'}</p>
+          <p><span className="text-gray-600">工号：</span>{employee.employee_number || '-'}</p>
+          <p><span className="text-gray-600">出生日期：</span>{formatDate(employee.birthday)}</p>
+          <p><span className="text-gray-600">年龄：</span>{employee.age || '-'}</p>
+          <p><span className="text-gray-600">学历：</span>{employee.education || '-'}</p>
+        </div>
+      </div>
+      <div>
+        <h4 className="font-semibold text-gray-700 mb-2">工作信息</h4>
+        <div className="space-y-1">
+          <p><span className="text-gray-600">工作地：</span>{employee.Workplace || '-'}</p>
+          <p><span className="text-gray-600">所属子公司：</span>{employee.company || '-'}</p>
+          <p><span className="text-gray-600">职位代码：</span>{employee.job_position_number || '-'}</p>
+          <p><span className="text-gray-600">入司时间：</span>{formatDate(employee.join_date)}</p>
+          <p><span className="text-gray-600">部门：</span>{employee.department || '-'}</p>
+          <p><span className="text-gray-600">专业：</span>{employee.major || '-'}</p>
+          <p><span className="text-gray-600">毕业院校：</span>{employee.graduation_institution || '-'}</p>
+        </div>
+      </div>
+      <div>
+        <h4 className="font-semibold text-gray-700 mb-2">证件信息</h4>
+        <div className="space-y-1">
+          <p><span className="text-gray-600">身份证号：</span>{employee.ID_number ? '***' + employee.ID_number.slice(-4) : '-'}</p>
+          <p><span className="text-gray-600">社保号：</span>{employee.social_security_number ? '***' + employee.social_security_number.slice(-4) : '-'}</p>
+          <p><span className="text-gray-600">个人税号：</span>{employee.rfc ? '***' + employee.rfc.slice(-4) : '-'}</p>
+          <p><span className="text-gray-600">国籍：</span>{employee.country_of_citizenship || '-'}</p>
+        </div>
+      </div>
+    </div>
+    <div className="mt-4 pt-4 border-t">
+      <h4 className="font-semibold text-gray-700 mb-2">联系信息</h4>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+        <p><span className="text-gray-600">墨西哥住宿地址：</span>{employee.address || '-'}</p>
+        <p><span className="text-gray-600">电话号码：</span>{employee.telephone_number || '-'}</p>
+        <p><span className="text-gray-600">邮件地址：</span>{employee.e_mail || '-'}</p>
+        <p><span className="text-gray-600">紧急联系人：</span>{employee.emergency_contact || '-'}</p>
+        <p><span className="text-gray-600">紧急联系人电话：</span>{employee.telephone_number_of_emergency_contact || '-'}</p>
+      </div>
+    </div>
+    <div className="mt-4 pt-4 border-t">
+      <h4 className="font-semibold text-gray-700 mb-2">权限信息</h4>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+        <p><span className="text-gray-600">是否管理员：</span>{employee.isAdmin ? '是' : '否'}</p>
+        <p><span className="text-gray-600">是否部长：</span>{employee.isMinister ? '是' : '否'}</p>
+        <p><span className="text-gray-600">角色：</span>{getRoleNames(employee.roles).join(', ') || '-'}</p>
+        <p><span className="text-gray-600">角色等级：</span>{Array.isArray(employee.roles_level) ? employee.roles_level.join(', ') : '-'}</p>
+        <p><span className="text-gray-600">功能导航顺序：</span>{employee.navigationOrder || '-'}</p>
+        <p><span className="text-gray-600">权限列表：</span>{employee.permissions || '-'}</p>
+      </div>
+    </div>
+  </div>;
+  useEffect(() => {
+    loadRoles();
+  }, []);
+  if (loading) {
+    return <div className="flex justify-center py-8">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+    </div>;
+  }
+  return <div className="flex flex-col h-full">
+    {/* 表格容器 - 支持滚动 */}
+    <div className="flex-1 overflow-auto">
+      <Table>
+        <TableHeader className="sticky top-0 bg-white z-10">
+          <TableRow>
+            <TableHead className="w-12"></TableHead>
+            <TableHead className="min-w-[100px]">姓名</TableHead>
+            <TableHead className="min-w-[100px]">用户名</TableHead>
+            <TableHead className="min-w-[100px]">工号</TableHead>
+            <TableHead className="min-w-[100px]">部门</TableHead>
+            <TableHead className="min-w-[100px]">操作</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {employees.map(employee => {
+            const roleNames = getRoleNames(employee.roles);
+            const isExpanded = expandedRows.has(employee._id);
+            return <React.Fragment key={employee._id}>
+              <TableRow>
+                <TableCell>
+                  <Button variant="ghost" size="sm" onClick={() => toggleExpand(employee._id)}>
+                    <Eye className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                  </Button>
+                </TableCell>
+                <TableCell className="font-medium">{employee.name}</TableCell>
+                <TableCell>{employee.username}</TableCell>
+                <TableCell>
+                  <Badge variant="outline" className="text-xs">
+                    {employee.employee_number || '-'}
+                  </Badge>
+                </TableCell>
+                {/* <TableCell>
+                  <Badge variant="secondary" className="text-xs">
+                    {employee.sex || '-'}
+                  </Badge>
+                </TableCell> */}
+                {/* <TableCell>
+                  <Badge variant="outline" className="text-xs">
+                    {employee.employee_type || '-'}
+                  </Badge>
+                </TableCell> */}
+                {/* <TableCell>{employee.Workplace || '-'}</TableCell> */}
+                <TableCell>{employee.department || '-'}</TableCell>
+                {/* <TableCell>
+                  <div className="flex flex-wrap gap-1">
+                    {roleNames.map((roleName, index) => <Badge key={index} variant="secondary" className="text-xs">
+                      {roleName}
+                    </Badge>)}
+                  </div>
+                </TableCell> */}
+                {/* <TableCell>{formatDate(employee.join_date)}</TableCell> */}
+                <TableCell>
+                  <div className="flex space-x-1">
+                    <Button variant="ghost" size="sm" onClick={() => onEdit(employee)}>
+                      <Edit className="w-4 h-4" />
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => onDelete(employee)}>
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+              {isExpanded && <TableRow>
+                <TableCell colSpan={11} className="p-0">
+                  {renderExpandedDetails(employee)}
+                </TableCell>
+              </TableRow>}
+            </React.Fragment>;
+          })}
+        </TableBody>
+      </Table>
+    </div>
+
+    {/* 分页控件 */}
+    {renderPagination()}
+  </div>;
 }
