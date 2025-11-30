@@ -9,7 +9,8 @@ export function EmployeeEditDialog({
   open,
   onOpenChange,
   employee,
-  onSave
+  onSave,
+  $w // 添加$w参数
 }) {
   const [formData, setFormData] = useState({
     name: '',
@@ -56,6 +57,13 @@ export function EmployeeEditDialog({
   const {
     toast
   } = useToast();
+
+  // 验证身份证号函数
+  const validateIdCard = idCard => {
+    if (!idCard) return true;
+    const regex = /(^\d{15}$)|(^\d{18}$)|(^\d{17}(\d|X|x)$)/;
+    return regex.test(idCard);
+  };
 
   // 墨西哥时区调整：将日期向后移动一天
   const adjustDateForMexico = dateString => {
@@ -281,13 +289,6 @@ export function EmployeeEditDialog({
     });
   };
 
-  // // 验证身份证号
-  // const validateIdCard = idCard => {
-  //   if (!idCard) return true;
-  //   const regex = /(^\d{15}$)|(^\d{18}$)|(^\d{17}(\d|X|x)$)/;
-  //   return regex.test(idCard);
-  // };
-
   // 验证密码
   const validatePassword = password => {
     if (!password) return true;
@@ -324,7 +325,7 @@ export function EmployeeEditDialog({
       newErrors.password = '密码长度至少6位';
     }
 
-    // 身份证号验证
+    // 身份证号验证（仅在填写时验证）
     if (formData.ID_number && !validateIdCard(formData.ID_number)) {
       newErrors.ID_number = '身份证号格式不正确';
     }
@@ -565,19 +566,6 @@ export function EmployeeEditDialog({
           </SelectContent>
         </Select>
       </div>
-      {/* {renderSelect('employee_type', '类别', [{
-        value: '正式员工',
-        label: '正式员工'
-      }, {
-        value: '实习生',
-        label: '实习生'
-      }, {
-        value: '外派员工',
-        label: '外派员工'
-      }, {
-        value: '合同工',
-        label: '合同工'
-      }])} */}
       {employee ? <div>
         <Label>密码（留空不修改）</Label>
         {renderInput('password', '密码', 'password', '请输入新密码，留空不修改')}
@@ -657,31 +645,7 @@ export function EmployeeEditDialog({
     </div>
   </div>;
   const renderPermissionInfo = () => <div className="space-y-4">
-    {/* <h3 className="text-lg font-semibold text-gray-900">权限信息</h3>
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        // <div className="flex items-center space-x-2">
-        //   <Checkbox checked={formData.isAdmin} onCheckedChange={checked => handleInputChange('isAdmin', checked)} />
-        //   <Label>是否管理员</Label>
-        // </div>
-        // <div className="flex items-center space-x-2">
-        //   <Checkbox checked={formData.isMinister} onCheckedChange={checked => handleInputChange('isMinister', checked)} />
-        //   <Label>是否部长</Label>
-        // </div>
-      // {renderInput('permissions', '权限列表', 'text', '请输入权限列表（逗号分隔）')}
-      // {renderInput('navigationOrder', '功能导航顺序', 'text', '请输入功能导航顺序')} */}
-    {/* </div> */}
-    {/* // <div>
-      //   <Label>用户角色</Label>
-      //   {rolesLoading ? <div className="flex items-center justify-center py-2">
-      //       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-      //       <span className="ml-2 text-sm text-gray-500">加载中...</span>
-      //     </div> : roles.length > 0 ? <div className="space-y-2 mt-2">
-      //       {roles.map(role => <label key={role._id} className="flex items-center space-x-2">
-      //           <input type="checkbox" checked={formData.roles.includes(role._id)} onChange={e => handleRoleChange(role._id, e.target.checked)} className="rounded border-gray-300" />
-      //           <span className="text-sm">{role.roleName} (等级: {role.level || 0})</span>
-      //         </label>)}
-      //     </div> : <div className="text-sm text-gray-500 py-2">暂无可用角色</div>}
-      // </div> */}
+    {/* 权限信息部分暂时隐藏 */}
   </div>;
   return <Dialog open={open} onOpenChange={onOpenChange}>
     <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
