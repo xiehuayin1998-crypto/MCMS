@@ -8,9 +8,9 @@ import { Edit, Trash2, User, Mail, Phone, Building, Shield } from 'lucide-react'
 // @ts-ignore;
 import { EmployeeEditDialog } from './EmployeeEditDialog';
 export function EmployeeTable({
-  employees,
-  departments,
-  roles,
+  employees = [],
+  departments = [],
+  roles = [],
   onEmployeeUpdated,
   onEmployeeDeleted,
   $w
@@ -122,16 +122,88 @@ export function EmployeeTable({
       setDeletingEmployee(null);
     }
   };
+
+  // 安全获取部门名称
   const getDepartmentName = departmentId => {
+    if (!Array.isArray(departments) || !departmentId) {
+      return '未分配';
+    }
     const dept = departments.find(d => d._id === departmentId);
     return dept ? dept.name : '未分配';
   };
+
+  // 安全获取角色名称
   const getRoleNames = roleIds => {
-    if (!Array.isArray(roleIds)) return [];
+    if (!Array.isArray(roleIds) || !Array.isArray(roles) || roles.length === 0) {
+      return [];
+    }
     return roleIds.map(roleId => {
       const role = roles.find(r => r._id === roleId);
       return role ? role.roleName : '未知角色';
     });
+  };
+
+  // 安全渲染员工列表
+  const renderEmployeeList = () => {
+    if (!Array.isArray(employees) || employees.length === 0) {
+      return <TableRow>
+          <TableCell colSpan={10} className="text-center py-8 text-gray-500">
+            暂无员工数据
+          </TableCell>
+        </TableRow>;
+    }
+    return employees.map(employee => <TableRow key={employee._id}>
+        <TableCell className="font-medium">
+          <div className="flex items-center space-x-2">
+            <User className="w-4 h-4 text-gray-500" />
+            <span>{employee.name}</span>
+          </div>
+        </TableCell>
+        <TableCell>{employee.username}</TableCell>
+        <TableCell>
+          <div className="flex items-center space-x-1">
+            <Mail className="w-4 h-4 text-gray-500" />
+            <span>{employee.email}</span>
+          </div>
+        </TableCell>
+        <TableCell>
+          <div className="flex items-center space-x-1">
+            <Phone className="w-4 h-4 text-gray-500" />
+            <span>{employee.phone}</span>
+          </div>
+        </TableCell>
+        <TableCell>
+          <div className="flex items-center space-x-1">
+            <Building className="w-4 h-4 text-gray-500" />
+            <span>{getDepartmentName(employee.department)}</span>
+          </div>
+        </TableCell>
+        <TableCell>{employee.position}</TableCell>
+        <TableCell>{employee.employee_number}</TableCell>
+        <TableCell>
+          <Badge variant={employee.status === 'active' ? 'default' : employee.status === 'inactive' ? 'destructive' : 'secondary'}>
+            {employee.status === 'active' ? '在职' : employee.status === 'inactive' ? '离职' : '暂停'}
+          </Badge>
+        </TableCell>
+        <TableCell>
+          <div className="flex flex-wrap gap-1">
+            {getRoleNames(employee.roles).map(roleName => <Badge key={roleName} variant="outline" className="text-xs">
+                <Shield className="w-3 h-3 mr-1" />
+                {roleName}
+              </Badge>)}
+          </div>
+        </TableCell>
+        <TableCell>
+          <div className="flex space-x-2">
+            <Button variant="ghost" size="sm" onClick={() => handleEdit(employee)}>
+              <Edit className="w-4 h-4" />
+            </Button>
+            <Button variant="ghost" size="sm" className="text-red-600" onClick={() => handleDelete(employee)}>
+              <Trash2 className="w-4 h-4" />
+            </Button>
+          </div>
+        </TableCell>
+      </TableRow>);
   };
   return <div className="space-y-4">
       <div className="overflow-x-auto">
@@ -151,58 +223,7 @@ export function EmployeeTable({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {employees.map(employee => <TableRow key={employee._id}>
-                <TableCell className="font-medium">
-                  <div className="flex items-center space-x-2">
-                    <User className="w-4 h-4 text-gray-500" />
-                    <span>{employee.name}</span>
-                  </div>
-                </TableCell>
-                <TableCell>{employee.username}</TableCell>
-                <TableCell>
-                  <div className="flex items-center space-x-1">
-                    <Mail className="w-4 h-4 text-gray-500" />
-                    <span>{employee.email}</span>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center space-x-1">
-                    <Phone className="w-4 h-4 text-gray-500" />
-                    <span>{employee.phone}</span>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center space-x-1">
-                    <Building className="w-4 h-4 text-gray-500" />
-                    <span>{getDepartmentName(employee.department)}</span>
-                  </div>
-                </TableCell>
-                <TableCell>{employee.position}</TableCell>
-                <TableCell>{employee.employee_number}</TableCell>
-                <TableCell>
-                  <Badge variant={employee.status === 'active' ? 'default' : employee.status === 'inactive' ? 'destructive' : 'secondary'}>
-                    {employee.status === 'active' ? '在职' : employee.status === 'inactive' ? '离职' : '暂停'}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <div className="flex flex-wrap gap-1">
-                    {getRoleNames(employee.roles).map(roleName => <Badge key={roleName} variant="outline" className="text-xs">
-                        <Shield className="w-3 h-3 mr-1" />
-                        {roleName}
-                      </Badge>)}
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <div className="flex space-x-2">
-                    <Button variant="ghost" size="sm" onClick={() => handleEdit(employee)}>
-                      <Edit className="w-4 h-4" />
-                    </Button>
-                    <Button variant="ghost" size="sm" className="text-red-600" onClick={() => handleDelete(employee)}>
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>)}
+            {renderEmployeeList()}
           </TableBody>
         </Table>
       </div>
