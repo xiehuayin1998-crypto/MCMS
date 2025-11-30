@@ -32,12 +32,14 @@ exports.main = async (event, context) => {
     // 获取数据库实例
     const db = app.database();
 
-    // 首先检查用户是否存在
+    // 首先检查用户是否存在 - 修复查询方式
     const userRecord = await db.collection('mc_users')
-      .doc(userId)
+      .where({
+        _id: userId
+      })
       .get();
 
-    if (!userRecord.data || Object.keys(userRecord.data).length === 0) {
+    if (!userRecord.data || userRecord.data.length === 0) {
       return {
         success: false,
         errorCode: 'USER_NOT_FOUND',
@@ -53,12 +55,14 @@ exports.main = async (event, context) => {
     if (updateResult.updated > 0) {
       // 获取更新后的用户信息
       const updatedUser = await db.collection('mc_users')
-        .doc(userId)
+        .where({
+          _id: userId
+        })
         .get();
 
       return {
         success: true,
-        data: updatedUser.data,
+        data: updatedUser.data && updatedUser.data.length > 0 ? updatedUser.data[0] : null,
         message: '用户记录更新成功'
       };
     } else {
