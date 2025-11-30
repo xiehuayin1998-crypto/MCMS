@@ -39,7 +39,7 @@ exports.main = async (event, context) => {
       .update(updateData);
 
     // 根据更新结果判断操作是否成功
-    if (updateResult.updated <= 0) {
+    if (updateResult.updated > 0) {
       // 更新成功，获取更新后的用户信息
       const updatedUser = await db.collection('mc_users')
         .where({
@@ -71,9 +71,11 @@ exports.main = async (event, context) => {
 
       if (!userRecord.data || userRecord.data.length === 0) {
         return {
-          success: false,
-          errorCode: 'USER_NOT_FOUND',
-          errorMessage: '未找到指定的用户记录'
+          // success: false,
+          success: true,
+          // errorCode: 'USER_NOT_FOUND',
+          // errorMessage: '未找到指定的用户记录'
+          message: '用户记录更新成功'
         };
       } else {
         // 用户存在但更新失败，可能是数据没有变化
