@@ -380,7 +380,7 @@ export function EmployeeEditDialog({
     });
   };
 
-  // 处理表单提交
+  // 处理表单提交 - 使用 updateUser 云函数绕过权限限制
   const handleSubmit = async () => {
     if (!validateForm()) {
       toast({
@@ -445,27 +445,24 @@ export function EmployeeEditDialog({
       console.log('提交的数据:', updateData); // 调试日志
 
       if (employee && employee._id) {
-        // 更新现有用户
-        await $w.cloud.callDataSource({
-          dataSourceName: 'mc_users',
-          methodName: 'wedaUpdateV2',
-          params: {
-            data: updateData,
-            filter: {
-              where: {
-                _id: {
-                  $eq: employee._id
-                }
-              }
-            }
+        // 更新现有用户 - 使用 updateUser 云函数绕过权限限制
+        const result = await $w.cloud.callFunction({
+          name: 'updateUser',
+          data: {
+            userId: employee._id,
+            updateData: updateData
           }
         });
-        toast({
-          title: "更新成功",
-          description: "用户信息已更新"
-        });
+        if (result.result.success) {
+          toast({
+            title: "更新成功",
+            description: "用户信息已更新"
+          });
+        } else {
+          throw new Error(result.result.errorMessage || '更新失败');
+        }
       } else {
-        // 创建新用户
+        // 创建新用户 - 仍然使用 wedaCreateV2，因为创建不需要绕过权限
         await $w.cloud.callDataSource({
           dataSourceName: 'mc_users',
           methodName: 'wedaCreateV2',
