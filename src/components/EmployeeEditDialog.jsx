@@ -380,7 +380,7 @@ export function EmployeeEditDialog({
     try {
       setSaving(true);
 
-      // 构建更新数据对象
+      // 构建更新数据对象 - 确保包含所有必要字段
       const updateData = {
         name: formData.name.trim(),
         username: formData.username.trim(),
@@ -403,7 +403,7 @@ export function EmployeeEditDialog({
         rfc: formData.rfc.trim(),
         education: formData.education || '',
         graduation_institution: formData.graduation_institution.trim(),
-        major: formData.major.trim(),
+        major: employee.major || '',
         country_of_citizenship: formData.country_of_citizenship || '',
         address: formData.address.trim(),
         telephone_number: formData.telephone_number.trim(),
@@ -421,9 +421,9 @@ export function EmployeeEditDialog({
         updateData.password = formData.password;
       }
 
-      // 移除空值
+      // 移除空值和null值
       Object.keys(updateData).forEach(key => {
-        if (updateData[key] === '' || updateData[key] === null) {
+        if (updateData[key] === '' || updateData[key] === null || updateData[key] === undefined) {
           delete updateData[key];
         }
       });
@@ -443,13 +443,13 @@ export function EmployeeEditDialog({
           }
         });
         console.log('更新结果:', result);
-        if (result && result.success) {
+        if (result && result.result && result.result.success) {
           toast({
             title: "更新成功",
             description: "用户信息已更新"
           });
         } else {
-          throw new Error(result?.message || '更新失败');
+          throw new Error(result?.result?.message || '更新失败，请检查权限或联系管理员');
         }
       } else {
         // 创建新用户
@@ -462,22 +462,26 @@ export function EmployeeEditDialog({
           }
         });
         console.log('创建结果:', result);
-        if (result && result.success) {
+        if (result && result.result && result.result.success) {
           toast({
             title: "创建成功",
             description: "新用户已创建"
           });
         } else {
-          throw new Error(result?.message || '创建失败');
+          throw new Error(result?.result?.message || '创建失败，请检查权限或联系管理员');
         }
       }
-      onSave();
+
+      // 确保操作成功后调用onSave
+      if (onSave) {
+        await onSave();
+      }
       onOpenChange(false);
     } catch (error) {
       console.error('保存失败:', error);
       toast({
         title: "操作失败",
-        description: error.message || "无法保存用户信息",
+        description: error.message || "无法保存用户信息，请检查网络连接或联系管理员",
         variant: "destructive"
       });
     } finally {
