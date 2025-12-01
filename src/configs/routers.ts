@@ -13,7 +13,7 @@ import QUALITYSYSTEM from '../pages/qualitySystem.jsx';
 import SAFETYENVIRONMENTSYSTEM from '../pages/safetyEnvironmentSystem.jsx';
 import MEETINGROOMMANAGEMENTADMIN from '../pages/meetingRoomManagementAdmin.jsx';
 import PERMISSIONMANAGEMENT from '../pages/permissionManagement.jsx';
-import EMPLOYEEMANAGEMENTLOGIN from '../pages/employeeManagementLogin.jsx';
+import EMPLOYEELOGIN from '../pages/employeeLogin.jsx';
 export const routers = [{
   id: "login",
   component: LOGIN
@@ -60,6 +60,6 @@ export const routers = [{
   id: "permissionManagement",
   component: PERMISSIONMANAGEMENT
 }, {
-  id: "employeeManagementLogin",
-  component: EMPLOYEEMANAGEMENTLOGIN
+  id: "employeeLogin",
+  component: EMPLOYEELOGIN
 }]
