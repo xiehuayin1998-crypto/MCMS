@@ -1,0 +1,11 @@
+
+    {
+      "name": "bypass-rls-update-user",
+      "description": "绕过数据模型行级权限更新用户数据的云函数",
+      "version": "1.0.0",
+      "main": "index.js",
+      "dependencies": {
+        "@cloudbase/node-sdk": "^3.3.7"
+      }
+    }
+  

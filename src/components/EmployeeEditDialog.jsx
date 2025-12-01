@@ -10,7 +10,7 @@ export function EmployeeEditDialog({
   onOpenChange,
   employee,
   onSave,
-  $w
+  $w // 添加$w参数
 }) {
   const [formData, setFormData] = useState({
     name: '',
@@ -70,6 +70,7 @@ export function EmployeeEditDialog({
     if (!dateString) return '';
     try {
       const date = new Date(dateString);
+      // 墨西哥时区比中国晚13-16小时，需要将日期向后移动一天
       date.setDate(date.getDate() + 1);
       return date.toISOString().split('T')[0];
     } catch (error) {
@@ -82,6 +83,7 @@ export function EmployeeEditDialog({
     if (!dateString) return '';
     try {
       const date = new Date(dateString);
+      // 从墨西哥时区恢复：将日期向前移动一天
       date.setDate(date.getDate() - 1);
       return date.toISOString().split('T')[0];
     } catch (error) {
@@ -148,8 +150,10 @@ export function EmployeeEditDialog({
   // 初始化表单数据
   useEffect(() => {
     if (open) {
+      // 并行加载角色和部门数据
       Promise.all([loadRoles(), loadDepartments()]);
       if (employee) {
+        // 编辑模式：从墨西哥时区恢复日期
         setFormData({
           name: employee.name || '',
           username: employee.username || '',
@@ -161,6 +165,8 @@ export function EmployeeEditDialog({
           isMinister: employee.isMinister || false,
           navigationOrder: employee.navigationOrder || '',
           password: '',
+          // 编辑时不显示原密码
+          // 新增字段初始化，日期字段需要从墨西哥时区恢复
           sex: employee.sex || '',
           employee_number: employee.employee_number || '',
           employee_type: employee.employee_type || '',
@@ -186,6 +192,7 @@ export function EmployeeEditDialog({
           telephone_number_of_emergency_contact: employee.telephone_number_of_emergency_contact || ''
         });
       } else {
+        // 新建模式：使用当前日期
         setFormData({
           name: '',
           username: '',
@@ -197,6 +204,8 @@ export function EmployeeEditDialog({
           isMinister: false,
           navigationOrder: '',
           password: '123456',
+          // 新增用户默认密码
+          // 新增字段初始化
           sex: '',
           employee_number: '',
           employee_type: '',
@@ -247,6 +256,8 @@ export function EmployeeEditDialog({
     } else {
       newRoles = formData.roles.filter(id => id !== roleId);
     }
+
+    // 同步更新 roles_level
     newRolesLevel = newRoles.map(id => getRoleLevel(id));
     setFormData({
       ...formData,
@@ -345,12 +356,14 @@ export function EmployeeEditDialog({
     }
   };
 
-  // 处理日期输入变化
+  // 处理日期输入变化 - 墨西哥时区调整
   const handleDateChange = (field, value) => {
+    // 保存用户输入的原始日期
     setFormData({
       ...formData,
       [field]: value
     });
+    // 清除错误
     if (errors[field]) {
       setErrors({
         ...errors,
@@ -367,7 +380,7 @@ export function EmployeeEditDialog({
     });
   };
 
-  // 处理表单提交 - 使用云函数进行权限控制
+  // 处理表单提交
   const handleSubmit = async () => {
     if (!validateForm()) {
       toast({
@@ -380,7 +393,7 @@ export function EmployeeEditDialog({
     try {
       setSaving(true);
 
-      // 构建更新数据对象 - 确保包含所有必要字段
+      // 数据类型转换和清理，日期字段需要调整为墨西哥时区
       const updateData = {
         name: formData.name.trim(),
         username: formData.username.trim(),
@@ -391,6 +404,11 @@ export function EmployeeEditDialog({
         permissions: formData.permissions || '',
         isMinister: Boolean(formData.isMinister),
         navigationOrder: formData.navigationOrder || '',
+        // 仅在新增或修改密码时包含密码字段
+        ...(formData.password && {
+          password: formData.password
+        }),
+        // 字符串字段
         sex: formData.sex || '',
         employee_number: formData.employee_number.trim(),
         employee_type: formData.employee_type || '',
@@ -403,7 +421,7 @@ export function EmployeeEditDialog({
         rfc: formData.rfc.trim(),
         education: formData.education || '',
         graduation_institution: formData.graduation_institution.trim(),
-        major: employee.major || '',
+        major: formData.major.trim(),
         country_of_citizenship: formData.country_of_citizenship || '',
         address: formData.address.trim(),
         telephone_number: formData.telephone_number.trim(),
@@ -411,77 +429,62 @@ export function EmployeeEditDialog({
         e_mail: formData.e_mail.trim(),
         emergency_contact: formData.emergency_contact.trim(),
         telephone_number_of_emergency_contact: formData.telephone_number_of_emergency_contact.trim(),
+        // 日期字段 - 调整为墨西哥时区（向后移动一天）
         join_date: formData.join_date ? adjustDateForMexico(formData.join_date) : null,
         birthday: formData.birthday ? adjustDateForMexico(formData.birthday) : null,
+        // 数字字段
         age: formData.age ? parseInt(formData.age) : null
       };
 
-      // 仅在新增或修改密码时包含密码字段
-      if (formData.password) {
-        updateData.password = formData.password;
-      }
-
-      // 移除空值和null值
+      // 移除空值
       Object.keys(updateData).forEach(key => {
-        if (updateData[key] === '' || updateData[key] === null || updateData[key] === undefined) {
+        if (updateData[key] === '' || updateData[key] === null) {
           delete updateData[key];
         }
       });
-      console.log('准备提交的数据:', updateData);
+      console.log('提交的数据:', updateData); // 调试日志
 
-      // 调用云函数进行权限控制
-      let result;
       if (employee && employee._id) {
         // 更新现有用户
-        console.log('调用云函数更新用户:', employee._id);
-        result = await $w.cloud.callFunction({
-          name: 'user-update-with-permission',
-          data: {
-            action: 'update',
-            userId: employee._id,
-            updateData: updateData
+        await $w.cloud.callDataSource({
+          dataSourceName: 'mc_users',
+          methodName: 'wedaUpdateV2',
+          params: {
+            data: updateData,
+            filter: {
+              where: {
+                _id: {
+                  $eq: employee._id
+                }
+              }
+            }
           }
         });
-        console.log('更新结果:', result);
-        if (result && result.result && result.result.success) {
-          toast({
-            title: "更新成功",
-            description: "用户信息已更新"
-          });
-        } else {
-          throw new Error(result?.result?.message || '更新失败，请检查权限或联系管理员');
-        }
+        toast({
+          title: "更新成功",
+          description: "用户信息已更新"
+        });
       } else {
         // 创建新用户
-        console.log('调用云函数创建新用户');
-        result = await $w.cloud.callFunction({
-          name: 'user-update-with-permission',
-          data: {
-            action: 'create',
-            updateData: updateData
+        await $w.cloud.callDataSource({
+          dataSourceName: 'mc_users',
+          methodName: 'wedaCreateV2',
+          params: {
+            data: updateData
           }
         });
-        console.log('创建结果:', result);
-        if (result && result.result && result.result.success) {
-          toast({
-            title: "创建成功",
-            description: "新用户已创建"
-          });
-        } else {
-          throw new Error(result?.result?.message || '创建失败，请检查权限或联系管理员');
-        }
+        toast({
+          title: "创建成功",
+          description: "新用户已创建"
+        });
       }
-
-      // 确保操作成功后调用onSave
-      if (onSave) {
-        await onSave();
-      }
+      onSave();
       onOpenChange(false);
     } catch (error) {
-      console.error('保存失败:', error);
+      console.error('保存失败:', error); // 调试日志
       toast({
         title: "操作失败",
-        description: error.message || "无法保存用户信息，请检查网络连接或联系管理员",
+        description: error.message || "无法保存用户信息",
         variant: "destructive"
       });
     } finally {
@@ -510,7 +513,7 @@ export function EmployeeEditDialog({
     </div>;
   };
 
-  // 渲染带错误提示的日期选择框
+  // 渲染带错误提示的日期选择框（墨西哥时区调整）
   const renderDateInput = (field, label) => {
     return <div>
       <Label>{label}</Label>
@@ -564,12 +567,12 @@ export function EmployeeEditDialog({
         </Select>
       </div>
       {employee ? <div>
-          <Label>密码（留空不修改）</Label>
-          {renderInput('password', '密码', 'password', '请输入新密码，留空不修改')}
-        </div> : <div>
-          <Label>密码 *</Label>
-          {renderInput('password', '密码', 'password', '请输入密码')}
-        </div>}
+        <Label>密码（留空不修改）</Label>
+        {renderInput('password', '密码', 'password', '请输入新密码，留空不修改')}
+      </div> : <div>
+        <Label>密码 *</Label>
+        {renderInput('password', '密码', 'password', '请输入密码')}
+      </div>}
     </div>
   </div>;
   const renderWorkInfo = () => <div className="space-y-4">
@@ -641,6 +644,9 @@ export function EmployeeEditDialog({
       {renderInput('telephone_number_of_emergency_contact', '紧急联系人电话', 'text', '请输入紧急联系人电话')}
     </div>
   </div>;
+  const renderPermissionInfo = () => <div className="space-y-4">
+    {/* 权限信息部分暂时隐藏 */}
+  </div>;
   return <Dialog open={open} onOpenChange={onOpenChange}>
     <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
       <DialogHeader>
@@ -653,6 +659,7 @@ export function EmployeeEditDialog({
         {renderPersonalInfo()}
         {renderDocumentInfo()}
         {renderContactInfo()}
+        {renderPermissionInfo()}
       </div>
 
       <DialogFooter>
