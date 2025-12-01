@@ -1,7 +1,7 @@
 // @ts-ignore;
 import React, { useState, useEffect } from 'react';
 // @ts-ignore;
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Button, Badge, useToast, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Button, Badge, useToast } from '@/components/ui';
 // @ts-ignore;
 import { Edit, Trash2, Eye, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 
@@ -13,7 +13,8 @@ export function EmployeeTable({
   totalCount,
   currentPage,
   pageSize,
-  onPageChange
+  onPageChange,
+  $w // 添加$w参数
 }) {
   const [roles, setRoles] = useState([]);
   const [expandedRows, setExpandedRows] = useState(new Set());
@@ -179,9 +180,12 @@ export function EmployeeTable({
       </div>
     </div>
   </div>;
+
+  // 修复：添加依赖项，避免无限循环
   useEffect(() => {
     loadRoles();
-  }, []);
+  }, []); // 空依赖数组，只在组件挂载时执行一次
+
   if (loading) {
     return <div className="flex justify-center py-8">
       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -219,26 +223,7 @@ export function EmployeeTable({
                     {employee.employee_number || '-'}
                   </Badge>
                 </TableCell>
-                {/* <TableCell>
-                  <Badge variant="secondary" className="text-xs">
-                    {employee.sex || '-'}
-                  </Badge>
-                </TableCell> */}
-                {/* <TableCell>
-                  <Badge variant="outline" className="text-xs">
-                    {employee.employee_type || '-'}
-                  </Badge>
-                </TableCell> */}
-                {/* <TableCell>{employee.Workplace || '-'}</TableCell> */}
                 <TableCell>{employee.department || '-'}</TableCell>
-                {/* <TableCell>
-                  <div className="flex flex-wrap gap-1">
-                    {roleNames.map((roleName, index) => <Badge key={index} variant="secondary" className="text-xs">
-                      {roleName}
-                    </Badge>)}
-                  </div>
-                </TableCell> */}
-                {/* <TableCell>{formatDate(employee.join_date)}</TableCell> */}
                 <TableCell>
                   <div className="flex space-x-1">
                     <Button variant="ghost" size="sm" onClick={() => onEdit(employee)}>

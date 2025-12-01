@@ -1,5 +1,5 @@
 // @ts-ignore;
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 // @ts-ignore;
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, Input, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Button, useToast, Checkbox } from '@/components/ui';
 // @ts-ignore;
@@ -11,7 +11,7 @@ export function EmployeeEditDialog({
   employee,
   onSave,
   $w,
-  currentUser // 添加当前用户信息参数
+  currentUser
 }) {
   const [formData, setFormData] = useState({
     name: '',
@@ -60,8 +60,8 @@ export function EmployeeEditDialog({
     toast
   } = useToast();
 
-  // 检查当前用户权限
-  const checkPermission = () => {
+  // 修复：使用useCallback避免每次渲染都创建新函数
+  const checkPermission = useCallback(() => {
     if (!currentUser) {
       setPermissionError('无法获取当前用户信息');
       return false;
@@ -80,7 +80,7 @@ export function EmployeeEditDialog({
     }
     setPermissionError('');
     return true;
-  };
+  }, [currentUser, employee]);
 
   // 验证身份证号函数
   const validateIdCard = idCard => {
@@ -94,7 +94,6 @@ export function EmployeeEditDialog({
     if (!dateString) return '';
     try {
       const date = new Date(dateString);
-      // 墨西哥时区比中国晚13-16小时，需要将日期向后移动一天
       date.setDate(date.getDate() + 1);
       return date.toISOString().split('T')[0];
     } catch (error) {
@@ -107,7 +106,6 @@ export function EmployeeEditDialog({
     if (!dateString) return '';
     try {
       const date = new Date(dateString);
-      // 从墨西哥时区恢复：将日期向前移动一天
       date.setDate(date.getDate() - 1);
       return date.toISOString().split('T')[0];
     } catch (error) {
@@ -115,7 +113,7 @@ export function EmployeeEditDialog({
     }
   };
 
-  // 加载角色列表 - 使用数据源方法
+  // 加载角色列表
   const loadRoles = async () => {
     try {
       setRolesLoading(true);
@@ -143,7 +141,7 @@ export function EmployeeEditDialog({
     }
   };
 
-  // 加载部门列表 - 使用数据源方法
+  // 加载部门列表
   const loadDepartments = async () => {
     try {
       setDepartmentsLoading(true);
@@ -171,11 +169,11 @@ export function EmployeeEditDialog({
     }
   };
 
-  // 初始化表单数据
+  // 初始化表单数据 - 修复：避免在useEffect中直接调用setState导致循环
   useEffect(() => {
     if (open) {
       // 检查权限
-      checkPermission();
+      const hasPermission = checkPermission();
 
       // 并行加载角色和部门数据
       Promise.all([loadRoles(), loadDepartments()]);
@@ -192,8 +190,6 @@ export function EmployeeEditDialog({
           isMinister: employee.isMinister || false,
           navigationOrder: employee.navigationOrder || '',
           password: '',
-          // 编辑时不显示原密码
-          // 新增字段初始化，日期字段需要从墨西哥时区恢复
           sex: employee.sex || '',
           employee_number: employee.employee_number || '',
           employee_type: employee.employee_type || '',
@@ -219,7 +215,7 @@ export function EmployeeEditDialog({
           telephone_number_of_emergency_contact: employee.telephone_number_of_emergency_contact || ''
         });
       } else {
-        // 新建模式：使用当前日期
+        // 新建模式
         setFormData({
           name: '',
           username: '',
@@ -231,8 +227,6 @@ export function EmployeeEditDialog({
           isMinister: false,
           navigationOrder: '',
           password: '123456',
-          // 新增用户默认密码
-          // 新增字段初始化
           sex: '',
           employee_number: '',
           employee_type: '',
@@ -260,7 +254,7 @@ export function EmployeeEditDialog({
       }
       setErrors({});
     }
-  }, [open, employee, currentUser]);
+  }, [open, employee, checkPermission]);
 
   // 获取角色名称
   const getRoleName = roleId => {
@@ -283,8 +277,6 @@ export function EmployeeEditDialog({
     } else {
       newRoles = formData.roles.filter(id => id !== roleId);
     }
-
-    // 同步更新 roles_level
     newRolesLevel = newRoles.map(id => getRoleLevel(id));
     setFormData({
       ...formData,
@@ -334,8 +326,6 @@ export function EmployeeEditDialog({
   // 表单验证
   const validateForm = () => {
     const newErrors = {};
-
-    // 必填字段验证
     if (!formData.name.trim()) {
       newErrors.name = '姓名不能为空';
     }
@@ -351,13 +341,9 @@ export function EmployeeEditDialog({
     if (formData.password && !validatePassword(formData.password)) {
       newErrors.password = '密码长度至少6位';
     }
-
-    // 身份证号验证（仅在填写时验证）
     if (formData.ID_number && !validateIdCard(formData.ID_number)) {
       newErrors.ID_number = '身份证号格式不正确';
     }
-
-    // 日期验证
     const dateFields = ['join_date', 'birthday'];
     dateFields.forEach(field => {
       if (formData[field] && !validateDate(formData[field])) {
@@ -374,7 +360,6 @@ export function EmployeeEditDialog({
       ...formData,
       [field]: value
     });
-    // 清除错误
     if (errors[field]) {
       setErrors({
         ...errors,
@@ -383,14 +368,12 @@ export function EmployeeEditDialog({
     }
   };
 
-  // 处理日期输入变化 - 墨西哥时区调整
+  // 处理日期输入变化
   const handleDateChange = (field, value) => {
-    // 保存用户输入的原始日期
     setFormData({
       ...formData,
       [field]: value
     });
-    // 清除错误
     if (errors[field]) {
       setErrors({
         ...errors,
@@ -407,9 +390,8 @@ export function EmployeeEditDialog({
     });
   };
 
-  // 处理表单提交 - 使用数据源方法
+  // 处理表单提交
   const handleSubmit = async () => {
-    // 检查权限
     if (!checkPermission()) {
       toast({
         title: "权限不足",
@@ -428,8 +410,6 @@ export function EmployeeEditDialog({
     }
     try {
       setSaving(true);
-
-      // 数据类型转换和清理，日期字段需要调整为墨西哥时区
       const updateData = {
         name: formData.name.trim(),
         username: formData.username.trim(),
@@ -440,11 +420,9 @@ export function EmployeeEditDialog({
         permissions: formData.permissions || '',
         isMinister: Boolean(formData.isMinister),
         navigationOrder: formData.navigationOrder || '',
-        // 仅在新增或修改密码时包含密码字段
         ...(formData.password && {
           password: formData.password
         }),
-        // 字符串字段
         sex: formData.sex || '',
         employee_number: formData.employee_number.trim(),
         employee_type: formData.employee_type || '',
@@ -465,23 +443,16 @@ export function EmployeeEditDialog({
         e_mail: formData.e_mail.trim(),
         emergency_contact: formData.emergency_contact.trim(),
         telephone_number_of_emergency_contact: formData.telephone_number_of_emergency_contact.trim(),
-        // 日期字段 - 调整为墨西哥时区（向后移动一天）
         join_date: formData.join_date ? adjustDateForMexico(formData.join_date) : null,
         birthday: formData.birthday ? adjustDateForMexico(formData.birthday) : null,
-        // 数字字段
         age: formData.age ? parseInt(formData.age) : null
       };
-
-      // 移除空值
       Object.keys(updateData).forEach(key => {
         if (updateData[key] === '' || updateData[key] === null) {
           delete updateData[key];
         }
       });
-      console.log('提交的数据:', updateData); // 调试日志
-
       if (employee && employee._id) {
-        // 更新现有用户 - 使用数据源方法
         await $w.cloud.callDataSource({
           dataSourceName: 'mc_users',
           methodName: 'wedaUpdateV2',
@@ -501,7 +472,6 @@ export function EmployeeEditDialog({
           description: "用户信息已更新"
         });
       } else {
-        // 创建新用户 - 使用数据源方法
         await $w.cloud.callDataSource({
           dataSourceName: 'mc_users',
           methodName: 'wedaCreateV2',
@@ -517,7 +487,7 @@ export function EmployeeEditDialog({
       onSave();
       onOpenChange(false);
     } catch (error) {
-      console.error('保存失败:', error); // 调试日志
+      console.error('保存失败:', error);
       toast({
         title: "操作失败",
         description: error.message || "无法保存用户信息",
@@ -528,7 +498,7 @@ export function EmployeeEditDialog({
     }
   };
 
-  // 渲染带错误提示的输入框
+  // 渲染输入框
   const renderInput = (field, label, type = 'text', placeholder = '') => {
     if (field === 'password') {
       return <div>
@@ -549,7 +519,7 @@ export function EmployeeEditDialog({
     </div>;
   };
 
-  // 渲染带错误提示的日期选择框（墨西哥时区调整）
+  // 渲染日期输入框
   const renderDateInput = (field, label) => {
     return <div>
       <Label>{label}</Label>
@@ -558,7 +528,7 @@ export function EmployeeEditDialog({
     </div>;
   };
 
-  // 渲染带错误提示的选择框
+  // 渲染选择框
   const renderSelect = (field, label, options) => <div>
     <Label>{label}</Label>
     <Select value={formData[field] || ''} onValueChange={value => handleInputChange(field, value)}>
@@ -574,7 +544,7 @@ export function EmployeeEditDialog({
     {errors[field] && <p className="text-sm text-red-500 mt-1">{errors[field]}</p>}
   </div>;
 
-  // 分组渲染表单字段
+  // 渲染基本信息
   const renderBasicInfo = () => <div className="space-y-4">
     <h3 className="text-lg font-semibold text-gray-900">基本信息</h3>
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -611,6 +581,8 @@ export function EmployeeEditDialog({
       </div>}
     </div>
   </div>;
+
+  // 渲染工作信息
   const renderWorkInfo = () => <div className="space-y-4">
     <h3 className="text-lg font-semibold text-gray-900">工作信息</h3>
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -620,6 +592,8 @@ export function EmployeeEditDialog({
       {renderDateInput('join_date', '入司时间')}
     </div>
   </div>;
+
+  // 渲染个人信息
   const renderPersonalInfo = () => <div className="space-y-4">
     <h3 className="text-lg font-semibold text-gray-900">个人信息</h3>
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -662,6 +636,8 @@ export function EmployeeEditDialog({
       }])}
     </div>
   </div>;
+
+  // 渲染证件信息
   const renderDocumentInfo = () => <div className="space-y-4">
     <h3 className="text-lg font-semibold text-gray-900">证件信息</h3>
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -670,6 +646,8 @@ export function EmployeeEditDialog({
       {renderInput('rfc', '个人税号', 'text', '请输入个人税号')}
     </div>
   </div>;
+
+  // 渲染联系信息
   const renderContactInfo = () => <div className="space-y-4">
     <h3 className="text-lg font-semibold text-gray-900">联系信息</h3>
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -680,6 +658,8 @@ export function EmployeeEditDialog({
       {renderInput('telephone_number_of_emergency_contact', '紧急联系人电话', 'text', '请输入紧急联系人电话')}
     </div>
   </div>;
+
+  // 渲染权限信息
   const renderPermissionInfo = () => <div className="space-y-4">
     {/* 权限信息部分暂时隐藏 */}
   </div>;
@@ -689,7 +669,6 @@ export function EmployeeEditDialog({
         <DialogTitle>{employee ? '编辑用户' : '新增用户'}</DialogTitle>
       </DialogHeader>
 
-      {/* 权限警告 */}
       {permissionError && <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
           <div className="flex items-center">
             <AlertCircle className="w-5 h-5 text-red-600 mr-2" />

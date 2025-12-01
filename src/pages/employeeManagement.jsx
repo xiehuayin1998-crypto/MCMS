@@ -1,5 +1,5 @@
 // @ts-ignore;
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 // @ts-ignore;
 import { Button, Card, CardContent, CardHeader, CardTitle, useToast, Badge } from '@/components/ui';
 // @ts-ignore;
@@ -34,8 +34,8 @@ export default function EmployeeManagement(props) {
     toast
   } = useToast();
 
-  // 获取当前登录用户信息
-  const getCurrentUser = () => {
+  // 修复：使用useCallback避免每次渲染都创建新函数
+  const getCurrentUser = useCallback(() => {
     try {
       if ($w.auth.currentUser) {
         const userInfo = {
@@ -44,7 +44,10 @@ export default function EmployeeManagement(props) {
           nickName: $w.auth.currentUser.nickName,
           isAdmin: $w.auth.currentUser.type === 'admin' || $w.auth.currentUser.isAdmin
         };
-        setCurrentUser(userInfo);
+        // 只有在用户信息发生变化时才更新状态
+        if (JSON.stringify(userInfo) !== JSON.stringify(currentUser)) {
+          setCurrentUser(userInfo);
+        }
         return userInfo;
       }
       return null;
@@ -52,7 +55,7 @@ export default function EmployeeManagement(props) {
       console.error('获取当前用户信息失败:', error);
       return null;
     }
-  };
+  }, [$w.auth.currentUser, currentUser]);
 
   // 检查URL参数，处理自动搜索
   useEffect(() => {
@@ -72,7 +75,7 @@ export default function EmployeeManagement(props) {
     } else {
       getCurrentUser();
     }
-  }, [$w.page.dataset.params]);
+  }, [$w.page.dataset.params, getCurrentUser]);
 
   // 加载用户列表
   const loadEmployees = async (page = 1) => {
@@ -285,10 +288,10 @@ export default function EmployeeManagement(props) {
   };
 
   // 检查用户权限
-  const canManageUsers = () => {
+  const canManageUsers = useCallback(() => {
     const user = getCurrentUser();
     return user && user.isAdmin;
-  };
+  }, [getCurrentUser]);
   return <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
       <div className="max-w-7xl mx-auto">
         {/* 页面头部 */}
@@ -421,7 +424,8 @@ export default function EmployeeManagement(props) {
                 </div> : <EmployeeTable employees={filteredEmployees} onEdit={emp => {
               setSelectedEmployee(emp);
               setEditDialogOpen(true);
-            }} onDelete={handleDelete} loading={loading} totalCount={totalCount} currentPage={currentPage} pageSize={pageSize} onPageChange={handlePageChange} canEdit={canManageUsers()} />}
+            }} onDelete={handleDelete} loading={loading} totalCount={totalCount} currentPage={currentPage} pageSize={pageSize} onPageChange={handlePageChange} canEdit={canManageUsers()} $w={$w} // 传递$w参数
+            />}
             </div>
           </CardContent>
         </Card>
