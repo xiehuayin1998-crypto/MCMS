@@ -1,9 +1,10 @@
 
-const cloud = require('@cloudbase/node-sdk');
+// 使用云开发环境内置的SDK，无需额外安装依赖
+const tcb = require('tcb-admin-node');
 
 // 初始化云开发环境
-const app = cloud.init({
-  env: cloud.getCurrentEnv()
+const app = tcb.init({
+  env: tcb.getCurrentEnv()
 });
 
 const db = app.database();
