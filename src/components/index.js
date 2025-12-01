@@ -34,4 +34,3 @@ export * from './UserImportExport.jsx';
 export * from './UserBatchImportExport.jsx';
 export * from './UserJsonImportExport.jsx';
 export * from './AuthProvider.jsx';
-export * from './ProtectedRoute.jsx';
