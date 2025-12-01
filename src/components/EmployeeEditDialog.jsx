@@ -383,6 +383,10 @@ export function EmployeeEditDialog({
   // 调用云函数更新用户数据（绕过行级权限）
   const callBypassRlsUpdateUser = async (targetUserId, updateData) => {
     try {
+      console.log('调用云函数参数:', {
+        targetUserId,
+        updateData
+      });
       const result = await $w.cloud.callFunction({
         name: 'bypass-rls-update-user',
         data: {
@@ -390,18 +394,10 @@ export function EmployeeEditDialog({
           updateData: updateData
         }
       });
-      if (result.success) {
-        return {
-          success: true,
-          message: result.message || '用户数据更新成功',
-          updatedUser: result.updatedUser
-        };
-      } else {
-        return {
-          success: false,
-          message: result.message || '更新用户数据失败'
-        };
-      }
+      console.log('云函数返回结果:', result);
+
+      // 直接返回云函数的响应，不进行额外处理
+      return result;
     } catch (error) {
       console.error('调用云函数失败:', error);
       return {
@@ -486,23 +482,28 @@ export function EmployeeEditDialog({
           onSave();
           onOpenChange(false);
         } else {
-          throw new Error(updateResult.message);
+          // 如果云函数返回失败，抛出错误信息
+          throw new Error(updateResult.message || '更新用户数据失败');
         }
       } else {
         // 新建模式：仍然使用数据源创建新用户（不需要绕过权限）
-        await $w.cloud.callDataSource({
+        const createResult = await $w.cloud.callDataSource({
           dataSourceName: 'mc_users',
           methodName: 'wedaCreateV2',
           params: {
             data: updateData
           }
         });
-        toast({
-          title: "创建成功",
-          description: "新用户已创建"
-        });
-        onSave();
-        onOpenChange(false);
+        if (createResult && createResult._id) {
+          toast({
+            title: "创建成功",
+            description: "新用户已创建"
+          });
+          onSave();
+          onOpenChange(false);
+        } else {
+          throw new Error('创建新用户失败');
+        }
       }
     } catch (error) {
       console.error('保存失败:', error); // 调试日志
