@@ -34,76 +34,105 @@ export default function EmployeeManagement(props) {
   const [showBusinessMenu, setShowBusinessMenu] = useState(false);
   const [showDocumentMenu, setShowDocumentMenu] = useState(false);
   const [userLoading, setUserLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
   const {
     toast
   } = useToast();
 
-  // 获取当前登录用户信息 - 从mc_users数据源获取完整信息
-  const getCurrentUserInfo = useCallback(async () => {
+  // 重构：参考会议室预定页面的用户信息获取方式
+  const loadUserInfo = useCallback(async () => {
     try {
       setUserLoading(true);
-      if (!$w.auth.currentUser) {
+
+      // 首先检查本地存储
+      const storedUser = localStorage.getItem('currentUser');
+      if (storedUser) {
+        const parsedUser = JSON.parse(storedUser);
+        setCurrentUserInfo(parsedUser);
+        setIsAdmin(parsedUser.isAdmin || false);
         setUserLoading(false);
-        return null;
+        return;
       }
 
-      // 根据当前登录用户的userId从mc_users数据源查询完整信息
-      const result = await $w.cloud.callDataSource({
-        dataSourceName: 'mc_users',
-        methodName: 'wedaGetRecordsV2',
-        params: {
-          select: {
-            $master: true
-          },
-          filter: {
-            where: {
-              _id: {
-                $eq: $w.auth.currentUser.userId
+      // 如果本地存储没有，从数据源获取
+      if ($w.auth.currentUser && $w.auth.currentUser.name) {
+        const result = await $w.cloud.callDataSource({
+          dataSourceName: 'mc_users',
+          methodName: 'wedaGetRecordsV2',
+          params: {
+            filter: {
+              where: {
+                username: {
+                  $eq: $w.auth.currentUser.name
+                }
               }
+            },
+            select: {
+              $master: true
             }
-          },
-          pageSize: 1
+          }
+        });
+        if (result.records && result.records.length > 0) {
+          const user = result.records[0];
+          const userInfo = {
+            userId: user._id,
+            name: user.name,
+            username: user.username,
+            isAdmin: user.isAdmin || false,
+            department: user.department,
+            employee_number: user.employee_number
+          };
+          setCurrentUserInfo(userInfo);
+          setIsAdmin(userInfo.isAdmin);
+
+          // 保存到本地存储
+          localStorage.setItem('currentUser', JSON.stringify(userInfo));
+        } else {
+          // 如果查询不到用户记录，使用基础信息
+          const basicUserInfo = {
+            userId: $w.auth.currentUser.userId,
+            name: $w.auth.currentUser.name,
+            username: $w.auth.currentUser.name,
+            isAdmin: false,
+            department: '',
+            employee_number: ''
+          };
+          setCurrentUserInfo(basicUserInfo);
+          setIsAdmin(false);
         }
-      });
-      if (result.records && result.records.length > 0) {
-        const userData = result.records[0];
-        const userInfo = {
-          userId: userData._id,
-          name: userData.name,
-          username: userData.username,
-          isAdmin: userData.isAdmin || false,
-          department: userData.department,
-          employee_number: userData.employee_number
-        };
-        setCurrentUserInfo(userInfo);
-        setUserLoading(false);
-        return userInfo;
       } else {
-        // 如果查询不到用户记录，可能是用户不存在于mc_users表中
-        console.warn('当前登录用户在mc_users表中不存在记录');
+        // 未登录状态
         setCurrentUserInfo(null);
-        setUserLoading(false);
-        return null;
+        setIsAdmin(false);
       }
     } catch (error) {
-      console.error('获取当前用户信息失败:', error);
-      toast({
-        title: "获取用户信息失败",
-        description: "无法获取当前用户信息，请刷新页面重试",
-        variant: "destructive"
-      });
-      setCurrentUserInfo(null);
+      console.error('获取用户信息失败:', error);
+      // 出错时使用基础信息
+      if ($w.auth.currentUser) {
+        const basicUserInfo = {
+          userId: $w.auth.currentUser.userId,
+          name: $w.auth.currentUser.name,
+          username: $w.auth.currentUser.name,
+          isAdmin: false,
+          department: '',
+          employee_number: ''
+        };
+        setCurrentUserInfo(basicUserInfo);
+        setIsAdmin(false);
+      } else {
+        setCurrentUserInfo(null);
+        setIsAdmin(false);
+      }
+    } finally {
       setUserLoading(false);
-      return null;
     }
   }, [$w.auth.currentUser, $w.cloud]);
 
-  // 加载用户信息 - 修复：添加重试机制和更完善的错误处理
+  // 重构：简化加载逻辑
   useEffect(() => {
-    const loadUserInfo = async () => {
+    const loadData = async () => {
       const params = $w.page.dataset.params;
       if (params && params.autoSearch) {
-        // 如果是自动搜索模式，先处理自动搜索逻辑
         setSearchParams(prev => ({
           ...prev,
           searchTerm: params.autoSearch
@@ -116,23 +145,28 @@ export default function EmployeeManagement(props) {
           description: `已自动搜索：${params.autoSearch}`
         });
       }
-
-      // 无论是否有自动搜索参数，都加载用户信息
-      await getCurrentUserInfo();
+      await loadUserInfo();
     };
-    loadUserInfo();
+    loadData();
   }, [$w.page.dataset.params]);
 
-  // 添加手动刷新用户信息的功能
+  // 重构：简化刷新用户信息功能
   const refreshUserInfo = async () => {
-    await getCurrentUserInfo();
+    // 清除本地存储，强制重新获取
+    localStorage.removeItem('currentUser');
+    await loadUserInfo();
     toast({
       title: "用户信息已刷新",
       description: "当前用户信息已更新"
     });
   };
 
-  // 加载用户列表
+  // 检查用户权限 - 使用重构后的isAdmin状态
+  const canManageUsers = useCallback(() => {
+    return isAdmin;
+  }, [isAdmin]);
+
+  // 加载用户列表（保持不变）
   const loadEmployees = async (page = 1) => {
     try {
       setLoading(true);
@@ -195,7 +229,7 @@ export default function EmployeeManagement(props) {
     }
   };
 
-  // 处理搜索按钮点击
+  // 处理搜索按钮点击（保持不变）
   const handleSearchClick = () => {
     if (isReadOnlySearch) {
       toast({
@@ -210,7 +244,7 @@ export default function EmployeeManagement(props) {
     loadEmployees(1);
   };
 
-  // 处理搜索和筛选
+  // 处理搜索和筛选（保持不变）
   const handleSearch = (searchTerm, department, role) => {
     if (isReadOnlySearch) {
       toast({
@@ -227,7 +261,7 @@ export default function EmployeeManagement(props) {
     });
   };
 
-  // 处理重置按钮
+  // 处理重置按钮（保持不变）
   const handleReset = () => {
     if (isReadOnlySearch) return;
     setSearchParams({
@@ -241,10 +275,10 @@ export default function EmployeeManagement(props) {
     setTotalCount(0);
   };
 
-  // 处理只读模式下的刷新按钮点击
+  // 处理只读模式下的刷新按钮点击（保持不变）
   const handleRefresh = async () => {
     if (!isReadOnlySearch) return;
-    const user = await getCurrentUserInfo();
+    const user = currentUserInfo;
     if (!user || !user.name && !user.username) {
       toast({
         title: "刷新失败",
@@ -268,21 +302,20 @@ export default function EmployeeManagement(props) {
     });
   };
 
-  // 处理页码变化
+  // 处理页码变化（保持不变）
   const handlePageChange = newPage => {
     loadEmployees(newPage);
   };
 
-  // 处理保存
+  // 处理保存（保持不变）
   const handleSave = async () => {
     await loadEmployees(currentPage);
   };
 
-  // 处理删除 - 添加权限检查
+  // 处理删除 - 使用重构后的权限判断（保持不变）
   const handleDelete = async employee => {
     try {
-      const currentUser = await getCurrentUserInfo();
-      if (!currentUser) {
+      if (!currentUserInfo) {
         toast({
           title: "权限不足",
           description: "无法获取当前用户信息",
@@ -290,8 +323,8 @@ export default function EmployeeManagement(props) {
         });
         return;
       }
-      // 使用mc_users中的isAdmin字段判断权限
-      if (!currentUser.isAdmin && currentUser.userId !== employee._id) {
+      // 使用重构后的isAdmin状态判断权限
+      if (!isAdmin && currentUserInfo.userId !== employee._id) {
         toast({
           title: "权限不足",
           description: "您只能删除自己的账户，如需删除其他用户请联系管理员",
@@ -329,7 +362,7 @@ export default function EmployeeManagement(props) {
     }
   };
 
-  // 处理导入导出完成 - 新增缺失的函数
+  // 处理导入导出完成（保持不变）
   const handleImportExportComplete = () => {
     setImportExportOpen(false);
     loadEmployees(currentPage);
@@ -339,7 +372,7 @@ export default function EmployeeManagement(props) {
     });
   };
 
-  // 处理导航菜单点击
+  // 处理导航菜单点击（保持不变）
   const handleNavigationClick = (type, item) => {
     if (type === 'business') {
       switch (item) {
@@ -385,11 +418,6 @@ export default function EmployeeManagement(props) {
     setShowBusinessMenu(false);
     setShowDocumentMenu(false);
   };
-
-  // 检查用户权限 - 使用mc_users中的isAdmin字段
-  const canManageUsers = useCallback(() => {
-    return currentUserInfo && currentUserInfo.isAdmin;
-  }, [currentUserInfo]);
   return <div className="min-h-screen bg-gray-50">
     {/* 使用统一的用户信息栏组件 */}
     <UserHeader $w={$w} showHomeButton={true} />
@@ -549,7 +577,7 @@ export default function EmployeeManagement(props) {
               <div>
                 <p className="text-purple-100">权限状态</p>
                 <p className="text-3xl font-bold">
-                  {canManageUsers() ? '管理员' : '普通用户'}
+                  {isAdmin ? '管理员' : '普通用户'}
                 </p>
                 {currentUserInfo && <p className="text-purple-200 text-sm mt-1">
                     {currentUserInfo.name} ({currentUserInfo.employee_number || '无工号'})
@@ -560,7 +588,7 @@ export default function EmployeeManagement(props) {
           </CardContent>
         </Card>
 
-        {/* 当前用户信息卡片 - 修复显示逻辑 */}
+        {/* 当前用户信息卡片 - 使用重构后的数据 */}
         <Card className="bg-gradient-to-r from-orange-500 to-orange-600 text-white">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -574,9 +602,9 @@ export default function EmployeeManagement(props) {
                       {currentUserInfo.username || currentUserInfo.name || '未知用户'}
                     </p>
                     <div className="flex items-center mt-2">
-                      {currentUserInfo.isAdmin ? <UserCheck className="w-4 h-4 mr-1 text-green-300" /> : <UserX className="w-4 h-4 mr-1 text-red-300" />}
+                      {isAdmin ? <UserCheck className="w-4 h-4 mr-1 text-green-300" /> : <UserX className="w-4 h-4 mr-1 text-red-300" />}
                       <span className="text-orange-200 text-sm">
-                        {currentUserInfo.isAdmin ? '管理员' : '普通用户'}
+                        {isAdmin ? '管理员' : '普通用户'}
                       </span>
                     </div>
                   </> : <>
@@ -588,7 +616,7 @@ export default function EmployeeManagement(props) {
                   </>}
               </div>
               <div className="bg-orange-400/20 rounded-full p-3">
-                {userLoading ? <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div> : currentUserInfo && currentUserInfo.isAdmin ? <UserCheck className="w-8 h-8 text-white" /> : <UserX className="w-8 h-8 text-white" />}
+                {userLoading ? <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div> : currentUserInfo && isAdmin ? <UserCheck className="w-8 h-8 text-white" /> : <UserX className="w-8 h-8 text-white" />}
               </div>
             </div>
           </CardContent>
