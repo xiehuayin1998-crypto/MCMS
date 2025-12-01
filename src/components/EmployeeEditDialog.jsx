@@ -503,12 +503,55 @@ export function EmployeeEditDialog({
       // 如果云函数调用失败，尝试使用原始方法作为备用方案
       if (error.message && error.message.includes('云函数调用失败')) {
         try {
+          // 重新构建updateData，确保在catch块内可用
+          const fallbackUpdateData = {
+            name: formData.name.trim(),
+            username: formData.username.trim(),
+            department: formData.department || '',
+            roles: formData.roles.filter(id => typeof id === 'string'),
+            roles_level: formData.roles_level.filter(l => typeof l === 'number'),
+            isAdmin: Boolean(formData.isAdmin),
+            permissions: formData.permissions || '',
+            isMinister: Boolean(formData.isMinister),
+            navigationOrder: formData.navigationOrder || '',
+            ...(formData.password && {
+              password: formData.password
+            }),
+            sex: formData.sex || '',
+            employee_number: formData.employee_number.trim(),
+            employee_type: formData.employee_type || '',
+            Workplace: formData.Workplace.trim(),
+            company: formData.company.trim(),
+            headquarters_location: formData.headquarters_location.trim(),
+            job_position_number: formData.job_position_number.trim(),
+            birth_place: formData.birth_place.trim(),
+            social_security_number: formData.social_security_number.trim(),
+            rfc: formData.rfc.trim(),
+            education: formData.education || '',
+            graduation_institution: formData.graduation_institution.trim(),
+            major: formData.major.trim(),
+            country_of_citizenship: formData.country_of_citizenship || '',
+            address: formData.address.trim(),
+            telephone_number: formData.telephone_number.trim(),
+            ID_number: formData.ID_number.trim(),
+            e_mail: formData.e_mail.trim(),
+            emergency_contact: formData.emergency_contact.trim(),
+            telephone_number_of_emergency_contact: formData.telephone_number_of_emergency_contact.trim(),
+            join_date: formData.join_date ? adjustDateForMexico(formData.join_date) : null,
+            birthday: formData.birthday ? adjustDateForMexico(formData.birthday) : null,
+            age: formData.age ? parseInt(formData.age) : null
+          };
+          Object.keys(fallbackUpdateData).forEach(key => {
+            if (fallbackUpdateData[key] === '' || fallbackUpdateData[key] === null) {
+              delete fallbackUpdateData[key];
+            }
+          });
           // 备用方案：尝试使用原始数据源方法
           await $w.cloud.callDataSource({
             dataSourceName: 'mc_users',
             methodName: 'wedaUpdateV2',
             params: {
-              data: updateData,
+              data: fallbackUpdateData,
               filter: {
                 where: {
                   _id: {
