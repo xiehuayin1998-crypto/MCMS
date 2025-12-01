@@ -4,33 +4,33 @@
   "title": "用户管理",
   "schemas": [
     {
+      "name": "name",
+      "title": "姓名",
+      "type": "String"
+    },
+    {
       "name": "username",
       "title": "用户名",
       "type": "String"
     },
     {
-      "name": "email",
-      "title": "邮箱",
-      "type": "Email"
-    },
-    {
-      "name": "phone",
-      "title": "手机号",
+      "name": "password",
+      "title": "密码",
       "type": "String"
     },
     {
-      "name": "department",
-      "title": "部门",
-      "type": "String"
+      "name": "isAdmin",
+      "title": "是否管理员",
+      "type": "Boolean"
     },
     {
-      "name": "position",
-      "title": "职位",
+      "name": "permissions",
+      "title": "权限列表",
       "type": "String"
     },
     {
       "name": "roles",
-      "title": "角色",
+      "title": "用户角色",
       "type": "Array",
       "items": {
         "type": "String"
@@ -45,36 +45,136 @@
       }
     },
     {
-      "name": "permissions",
-      "title": "权限",
-      "type": "String"
-    },
-    {
-      "name": "isAdmin",
-      "title": "是否管理员",
+      "name": "isMinister",
+      "title": "是否部长",
       "type": "Boolean"
     },
     {
-      "name": "avatar",
-      "title": "头像",
-      "type": "Image"
-    },
-    {
-      "name": "status",
-      "title": "状态",
+      "name": "navigationOrder",
+      "title": "功能导航顺序",
       "type": "String"
     },
     {
-      "name": "createdAt",
-      "title": "创建时间",
-      "type": "DateTime",
-      "format": "timestamp-ms"
+      "name": "department",
+      "title": "所属部门",
+      "type": "String"
     },
     {
-      "name": "updatedAt",
-      "title": "更新时间",
-      "type": "DateTime",
-      "format": "timestamp-ms"
+      "name": "sex",
+      "title": "性别",
+      "type": "String"
+    },
+    {
+      "name": "employee_number",
+      "title": "工号",
+      "type": "String"
+    },
+    {
+      "name": "employee_type",
+      "title": "类别",
+      "type": "String"
+    },
+    {
+      "name": "Workplace",
+      "title": "工作地",
+      "type": "String"
+    },
+    {
+      "name": "company",
+      "title": "所属子公司",
+      "type": "String"
+    },
+    {
+      "name": "headquarters_location",
+      "title": "总部所属单位",
+      "type": "String"
+    },
+    {
+      "name": "job_position_number",
+      "title": "职位代码",
+      "type": "String"
+    },
+    {
+      "name": "join_date",
+      "title": "入司时间",
+      "type": "Date",
+      "format": "date"
+    },
+    {
+      "name": "birthday",
+      "title": "出生日期",
+      "type": "Date",
+      "format": "date"
+    },
+    {
+      "name": "age",
+      "title": "年龄",
+      "type": "Number"
+    },
+    {
+      "name": "birth_place",
+      "title": "籍贯",
+      "type": "String"
+    },
+    {
+      "name": "social_security_number",
+      "title": "社保号",
+      "type": "String"
+    },
+    {
+      "name": "rfc",
+      "title": "个人税号",
+      "type": "String"
+    },
+    {
+      "name": "education",
+      "title": "学历",
+      "type": "String"
+    },
+    {
+      "name": "graduation_institution",
+      "title": "毕业院校",
+      "type": "String"
+    },
+    {
+      "name": "major",
+      "title": "专业",
+      "type": "String"
+    },
+    {
+      "name": "country_of_citizenship",
+      "title": "国籍",
+      "type": "String"
+    },
+    {
+      "name": "address",
+      "title": "墨西哥住宿地址",
+      "type": "String"
+    },
+    {
+      "name": "telephone_number",
+      "title": "电话号码",
+      "type": "String"
+    },
+    {
+      "name": "ID_number",
+      "title": "身份证号",
+      "type": "String"
+    },
+    {
+      "name": "e_mail",
+      "title": "邮件地址",
+      "type": "String"
+    },
+    {
+      "name": "emergency_contact",
+      "title": "紧急联系人",
+      "type": "String"
+    },
+    {
+      "name": "telephone_number_of_emergency_contact",
+      "title": "紧急联系人电话",
+      "type": "String"
     }
   ]
 }
