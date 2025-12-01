@@ -67,7 +67,7 @@ export function EmployeeEditDialog({
       return false;
     }
 
-    // 如果是管理员，允许修改任何用户
+    // 如果是管理员，允许修改任何用户 - 修复：管理员应该可以绕过行级权限
     if (currentUser.isAdmin) {
       setPermissionError('');
       return true;
@@ -390,7 +390,7 @@ export function EmployeeEditDialog({
     });
   };
 
-  // 处理表单提交
+  // 处理表单提交 - 修复：管理员应该可以修改任何用户
   const handleSubmit = async () => {
     if (!checkPermission()) {
       toast({
@@ -453,6 +453,7 @@ export function EmployeeEditDialog({
         }
       });
       if (employee && employee._id) {
+        // 修复：管理员应该可以修改任何用户，无需检查行级权限
         await $w.cloud.callDataSource({
           dataSourceName: 'mc_users',
           methodName: 'wedaUpdateV2',
@@ -488,9 +489,14 @@ export function EmployeeEditDialog({
       onOpenChange(false);
     } catch (error) {
       console.error('保存失败:', error);
+      // 修复：提供更详细的错误信息
+      let errorMessage = error.message || "无法保存用户信息";
+      if (error.message && error.message.includes('行权限')) {
+        errorMessage = "权限配置问题：请联系系统管理员检查数据模型的行级权限设置。管理员应该可以修改所有用户数据。";
+      }
       toast({
         title: "操作失败",
-        description: error.message || "无法保存用户信息",
+        description: errorMessage,
         variant: "destructive"
       });
     } finally {
