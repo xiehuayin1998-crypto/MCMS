@@ -33,6 +33,7 @@ export default function EmployeeManagement(props) {
   const [currentUserInfo, setCurrentUserInfo] = useState(null);
   const [showBusinessMenu, setShowBusinessMenu] = useState(false);
   const [showDocumentMenu, setShowDocumentMenu] = useState(false);
+  const [userLoading, setUserLoading] = useState(true);
   const {
     toast
   } = useToast();
@@ -40,7 +41,9 @@ export default function EmployeeManagement(props) {
   // 获取当前登录用户信息 - 从mc_users数据源获取完整信息
   const getCurrentUserInfo = useCallback(async () => {
     try {
+      setUserLoading(true);
       if (!$w.auth.currentUser) {
+        setUserLoading(false);
         return null;
       }
 
@@ -72,39 +75,62 @@ export default function EmployeeManagement(props) {
           department: userData.department,
           employee_number: userData.employee_number
         };
-
-        // 只有在用户信息发生变化时才更新状态
-        if (JSON.stringify(userInfo) !== JSON.stringify(currentUserInfo)) {
-          setCurrentUserInfo(userInfo);
-        }
+        setCurrentUserInfo(userInfo);
+        setUserLoading(false);
         return userInfo;
+      } else {
+        // 如果查询不到用户记录，可能是用户不存在于mc_users表中
+        console.warn('当前登录用户在mc_users表中不存在记录');
+        setCurrentUserInfo(null);
+        setUserLoading(false);
+        return null;
       }
-      return null;
     } catch (error) {
       console.error('获取当前用户信息失败:', error);
+      toast({
+        title: "获取用户信息失败",
+        description: "无法获取当前用户信息，请刷新页面重试",
+        variant: "destructive"
+      });
+      setCurrentUserInfo(null);
+      setUserLoading(false);
       return null;
     }
-  }, [$w.auth.currentUser, currentUserInfo]);
+  }, [$w.auth.currentUser, $w.cloud]);
 
-  // 检查URL参数，处理自动搜索
+  // 加载用户信息 - 修复：添加重试机制和更完善的错误处理
   useEffect(() => {
-    const params = $w.page.dataset.params;
-    if (params && params.autoSearch) {
-      setSearchParams(prev => ({
-        ...prev,
-        searchTerm: params.autoSearch
-      }));
-      setIsReadOnlySearch(params.readOnly === 'true');
-      handleSearch(params.autoSearch, '', '');
-      setHasSearched(true);
-      toast({
-        title: "自动搜索",
-        description: `已自动搜索：${params.autoSearch}`
-      });
-    } else {
-      getCurrentUserInfo();
-    }
-  }, [$w.page.dataset.params, getCurrentUserInfo]);
+    const loadUserInfo = async () => {
+      const params = $w.page.dataset.params;
+      if (params && params.autoSearch) {
+        // 如果是自动搜索模式，先处理自动搜索逻辑
+        setSearchParams(prev => ({
+          ...prev,
+          searchTerm: params.autoSearch
+        }));
+        setIsReadOnlySearch(params.readOnly === 'true');
+        handleSearch(params.autoSearch, '', '');
+        setHasSearched(true);
+        toast({
+          title: "自动搜索",
+          description: `已自动搜索：${params.autoSearch}`
+        });
+      }
+
+      // 无论是否有自动搜索参数，都加载用户信息
+      await getCurrentUserInfo();
+    };
+    loadUserInfo();
+  }, [$w.page.dataset.params]);
+
+  // 添加手动刷新用户信息的功能
+  const refreshUserInfo = async () => {
+    await getCurrentUserInfo();
+    toast({
+      title: "用户信息已刷新",
+      description: "当前用户信息已更新"
+    });
+  };
 
   // 加载用户列表
   const loadEmployees = async (page = 1) => {
@@ -471,6 +497,10 @@ export default function EmployeeManagement(props) {
         </div>
         
         <div className="flex flex-wrap gap-3">
+          <Button variant="outline" onClick={refreshUserInfo} className="flex items-center bg-gray-50 text-gray-700 hover:bg-gray-100 border-gray-300">
+            <RefreshCw className="w-4 h-4 mr-2" />
+            刷新用户信息
+          </Button>
           {canManageUsers() && <>
               <Button variant="outline" onClick={() => setImportExportOpen(true)} className="flex items-center bg-green-50 text-green-700 hover:bg-green-100 border-green-200">
                 <Upload className="w-4 h-4 mr-2" />
@@ -530,26 +560,35 @@ export default function EmployeeManagement(props) {
           </CardContent>
         </Card>
 
-        {/* 新增：当前用户信息卡片 */}
+        {/* 当前用户信息卡片 - 修复显示逻辑 */}
         <Card className="bg-gradient-to-r from-orange-500 to-orange-600 text-white">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-orange-100">当前用户</p>
-                <p className="text-2xl font-bold truncate max-w-[150px]">
-                  {currentUserInfo ? currentUserInfo.username : '未登录'}
-                </p>
-                <div className="flex items-center mt-2">
-                  {currentUserInfo ? <>
+                {userLoading ? <div className="flex items-center space-x-2">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
+                    <span className="text-orange-200 text-sm">加载中...</span>
+                  </div> : currentUserInfo ? <>
+                    <p className="text-2xl font-bold truncate max-w-[150px]">
+                      {currentUserInfo.username || currentUserInfo.name || '未知用户'}
+                    </p>
+                    <div className="flex items-center mt-2">
                       {currentUserInfo.isAdmin ? <UserCheck className="w-4 h-4 mr-1 text-green-300" /> : <UserX className="w-4 h-4 mr-1 text-red-300" />}
                       <span className="text-orange-200 text-sm">
                         {currentUserInfo.isAdmin ? '管理员' : '普通用户'}
                       </span>
-                    </> : <span className="text-orange-200 text-sm">未获取到用户信息</span>}
-                </div>
+                    </div>
+                  </> : <>
+                    <p className="text-2xl font-bold">未登录</p>
+                    <div className="flex items-center mt-2">
+                      <UserX className="w-4 h-4 mr-1 text-red-300" />
+                      <span className="text-orange-200 text-sm">请先登录系统</span>
+                    </div>
+                  </>}
               </div>
               <div className="bg-orange-400/20 rounded-full p-3">
-                {currentUserInfo && currentUserInfo.isAdmin ? <UserCheck className="w-8 h-8 text-white" /> : <UserX className="w-8 h-8 text-white" />}
+                {userLoading ? <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div> : currentUserInfo && currentUserInfo.isAdmin ? <UserCheck className="w-8 h-8 text-white" /> : <UserX className="w-8 h-8 text-white" />}
               </div>
             </div>
           </CardContent>
