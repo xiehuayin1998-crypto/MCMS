@@ -380,33 +380,6 @@ export function EmployeeEditDialog({
     });
   };
 
-  // 调用云函数更新用户数据（绕过行级权限）
-  const callBypassRlsUpdateUser = async (targetUserId, updateData) => {
-    try {
-      console.log('调用云函数参数:', {
-        targetUserId,
-        updateData
-      });
-      const result = await $w.cloud.callFunction({
-        name: 'bypass-rls-update-user',
-        data: {
-          targetUserId: targetUserId,
-          updateData: updateData
-        }
-      });
-      console.log('云函数返回结果:', result);
-
-      // 直接返回云函数的响应，不进行额外处理
-      return result;
-    } catch (error) {
-      console.error('调用云函数失败:', error);
-      return {
-        success: false,
-        message: `调用云函数失败: ${error.message || '未知错误'}`
-      };
-    }
-  };
-
   // 处理表单提交
   const handleSubmit = async () => {
     if (!validateForm()) {
@@ -472,39 +445,41 @@ export function EmployeeEditDialog({
       console.log('提交的数据:', updateData); // 调试日志
 
       if (employee && employee._id) {
-        // 编辑模式：调用云函数更新现有用户（绕过行级权限）
-        const updateResult = await callBypassRlsUpdateUser(employee._id, updateData);
-        if (updateResult.success) {
-          toast({
-            title: "更新成功",
-            description: updateResult.message || "用户信息已更新"
-          });
-          onSave();
-          onOpenChange(false);
-        } else {
-          // 如果云函数返回失败，抛出错误信息
-          throw new Error(updateResult.message || '更新用户数据失败');
-        }
+        // 更新现有用户
+        await $w.cloud.callDataSource({
+          dataSourceName: 'mc_users',
+          methodName: 'wedaUpdateV2',
+          params: {
+            data: updateData,
+            filter: {
+              where: {
+                _id: {
+                  $eq: employee._id
+                }
+              }
+            }
+          }
+        });
+        toast({
+          title: "更新成功",
+          description: "用户信息已更新"
+        });
       } else {
-        // 新建模式：仍然使用数据源创建新用户（不需要绕过权限）
-        const createResult = await $w.cloud.callDataSource({
+        // 创建新用户
+        await $w.cloud.callDataSource({
           dataSourceName: 'mc_users',
           methodName: 'wedaCreateV2',
           params: {
             data: updateData
           }
         });
-        if (createResult && createResult._id) {
-          toast({
-            title: "创建成功",
-            description: "新用户已创建"
-          });
-          onSave();
-          onOpenChange(false);
-        } else {
-          throw new Error('创建新用户失败');
-        }
+        toast({
+          title: "创建成功",
+          description: "新用户已创建"
+        });
       }
+      onSave();
+      onOpenChange(false);
     } catch (error) {
       console.error('保存失败:', error); // 调试日志
       toast({

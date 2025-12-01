@@ -127,7 +127,7 @@ export function UserJsonImportExport({
     try {
       setExporting(true);
 
-      // 获取所有用户数据
+      // 获取所有用户数据 - 使用数据源API，避免云函数调用
       const result = await $w.cloud.callDataSource({
         dataSourceName: 'mc_users',
         methodName: 'wedaGetRecordsV2',
@@ -241,7 +241,7 @@ export function UserJsonImportExport({
     }
   };
 
-  // 导入用户数据
+  // 导入用户数据 - 使用数据源API，避免云函数调用
   const importUserData = async data => {
     try {
       setImporting(true);
@@ -253,7 +253,7 @@ export function UserJsonImportExport({
         errors: []
       };
 
-      // 批量导入用户
+      // 批量导入用户 - 使用数据源API
       for (let i = 0; i < data.length; i++) {
         const userData = data[i];
         try {
@@ -264,7 +264,7 @@ export function UserJsonImportExport({
             continue;
           }
 
-          // 检查用户名是否已存在
+          // 检查用户名是否已存在 - 使用数据源API
           const existingUser = await $w.cloud.callDataSource({
             dataSourceName: 'mc_users',
             methodName: 'wedaGetRecordsV2',
@@ -325,7 +325,7 @@ export function UserJsonImportExport({
             telephone_number_of_emergency_contact: userData.telephone_number_of_emergency_contact || ''
           };
 
-          // 创建用户
+          // 创建用户 - 使用数据源API
           await $w.cloud.callDataSource({
             dataSourceName: 'mc_users',
             methodName: 'wedaCreateV2',
