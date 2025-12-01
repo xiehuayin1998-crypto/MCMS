@@ -1,9 +1,9 @@
 // @ts-ignore;
 import React, { useState, useEffect } from 'react';
 // @ts-ignore;
-import { Button, Card, CardContent, CardHeader, CardTitle, useToast } from '@/components/ui';
+import { Button, Card, CardContent, CardHeader, CardTitle, useToast, Badge } from '@/components/ui';
 // @ts-ignore;
-import { Plus, Users, Home, Download, Upload, Search, Filter, RefreshCw } from 'lucide-react';
+import { Plus, Users, Home, Upload, Search, Filter, RefreshCw, Shield, User } from 'lucide-react';
 
 import { EmployeeTable } from '@/components/EmployeeTable';
 import { EmployeeEditDialog } from '@/components/EmployeeEditDialog';
@@ -15,12 +15,12 @@ export default function EmployeeManagement(props) {
   } = props;
   const [employees, setEmployees] = useState([]);
   const [filteredEmployees, setFilteredEmployees] = useState([]);
-  const [loading, setLoading] = useState(false); // 初始为false，不自动加载
+  const [loading, setLoading] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [totalCount, setTotalCount] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize] = useState(10); // 每页显示条数
+  const [pageSize] = useState(10);
   const [searchParams, setSearchParams] = useState({
     searchTerm: '',
     department: '',
@@ -28,8 +28,8 @@ export default function EmployeeManagement(props) {
   });
   const [importExportOpen, setImportExportOpen] = useState(false);
   const [isReadOnlySearch, setIsReadOnlySearch] = useState(false);
-  const [hasSearched, setHasSearched] = useState(false); // 标记是否已进行搜索
-  const [currentUser, setCurrentUser] = useState(null); // 当前登录用户信息
+  const [hasSearched, setHasSearched] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
   const {
     toast
   } = useToast();
@@ -37,9 +37,13 @@ export default function EmployeeManagement(props) {
   // 获取当前登录用户信息
   const getCurrentUser = () => {
     try {
-      const storedUser = localStorage.getItem('currentUser');
-      if (storedUser) {
-        const userInfo = JSON.parse(storedUser);
+      if ($w.auth.currentUser) {
+        const userInfo = {
+          userId: $w.auth.currentUser.userId,
+          name: $w.auth.currentUser.name,
+          nickName: $w.auth.currentUser.nickName,
+          isAdmin: $w.auth.currentUser.type === 'admin' || $w.auth.currentUser.isAdmin
+        };
         setCurrentUser(userInfo);
         return userInfo;
       }
@@ -54,23 +58,18 @@ export default function EmployeeManagement(props) {
   useEffect(() => {
     const params = $w.page.dataset.params;
     if (params && params.autoSearch) {
-      // 设置搜索条件为只读模式
       setSearchParams(prev => ({
         ...prev,
         searchTerm: params.autoSearch
       }));
       setIsReadOnlySearch(params.readOnly === 'true');
-      // 自动执行搜索
       handleSearch(params.autoSearch, '', '');
       setHasSearched(true);
-
-      // 显示提示信息
       toast({
         title: "自动搜索",
         description: `已自动搜索：${params.autoSearch}`
       });
     } else {
-      // 初始化获取当前用户信息
       getCurrentUser();
     }
   }, [$w.page.dataset.params]);
@@ -79,13 +78,9 @@ export default function EmployeeManagement(props) {
   const loadEmployees = async (page = 1) => {
     try {
       setLoading(true);
-
-      // 构建查询条件
       const filter = {
         where: {}
       };
-
-      // 添加搜索条件
       if (searchParams.searchTerm) {
         filter.where.$or = [{
           name: {
@@ -93,6 +88,10 @@ export default function EmployeeManagement(props) {
           }
         }, {
           username: {
+            $search: searchParams.searchTerm
+          }
+        }, {
+          employee_number: {
             $search: searchParams.searchTerm
           }
         }];
@@ -130,7 +129,7 @@ export default function EmployeeManagement(props) {
     } catch (error) {
       toast({
         title: "加载失败",
-        description: "无法加载用户列表",
+        description: error.message || "无法加载用户列表",
         variant: "destructive"
       });
     } finally {
@@ -153,9 +152,8 @@ export default function EmployeeManagement(props) {
     loadEmployees(1);
   };
 
-  // 处理搜索和筛选（实时响应，但不自动加载数据）
+  // 处理搜索和筛选
   const handleSearch = (searchTerm, department, role) => {
-    // 如果是只读模式，不允许修改搜索条件
     if (isReadOnlySearch) {
       toast({
         title: "操作受限",
@@ -169,28 +167,25 @@ export default function EmployeeManagement(props) {
       department,
       role
     });
-    // 不自动加载数据，等待用户点击搜索按钮
   };
 
   // 处理重置按钮
   const handleReset = () => {
-    if (isReadOnlySearch) return; // 只读模式下不允许重置
+    if (isReadOnlySearch) return;
     setSearchParams({
       searchTerm: '',
       department: '',
       role: ''
     });
-    setHasSearched(false); // 重置搜索状态
-    setEmployees([]); // 清空用户列表
+    setHasSearched(false);
+    setEmployees([]);
     setFilteredEmployees([]);
     setTotalCount(0);
   };
 
   // 处理只读模式下的刷新按钮点击
   const handleRefresh = () => {
-    if (!isReadOnlySearch) return; // 只在只读模式下可用
-
-    // 重新获取当前用户信息
+    if (!isReadOnlySearch) return;
     const user = getCurrentUser();
     if (!user || !user.name && !user.username) {
       toast({
@@ -200,8 +195,6 @@ export default function EmployeeManagement(props) {
       });
       return;
     }
-
-    // 使用当前用户姓名重新搜索
     const userName = user.name || user.username;
     setSearchParams({
       searchTerm: userName,
@@ -227,9 +220,26 @@ export default function EmployeeManagement(props) {
     await loadEmployees(currentPage);
   };
 
-  // 处理删除
+  // 处理删除 - 添加权限检查
   const handleDelete = async employee => {
     try {
+      const currentUser = getCurrentUser();
+      if (!currentUser) {
+        toast({
+          title: "权限不足",
+          description: "无法获取当前用户信息",
+          variant: "destructive"
+        });
+        return;
+      }
+      if (!currentUser.isAdmin && currentUser.userId !== employee._id) {
+        toast({
+          title: "权限不足",
+          description: "您只能删除自己的账户，如需删除其他用户请联系管理员",
+          variant: "destructive"
+        });
+        return;
+      }
       await $w.cloud.callDataSource({
         dataSourceName: 'mc_users',
         methodName: 'wedaDeleteV2',
@@ -247,7 +257,6 @@ export default function EmployeeManagement(props) {
         title: "删除成功",
         description: "用户已删除"
       });
-      // 如果删除后当前页没有数据，回到上一页
       const newTotalCount = totalCount - 1;
       const newTotalPages = Math.ceil(newTotalCount / pageSize);
       const newPage = currentPage > newTotalPages ? Math.max(1, newTotalPages) : currentPage;
@@ -275,116 +284,152 @@ export default function EmployeeManagement(props) {
     loadEmployees(currentPage);
   };
 
-  // 退出只读模式（保留函数但不再使用按钮）
-  const handleExitReadOnlyMode = () => {
-    setIsReadOnlySearch(false);
-    setSearchParams({
-      searchTerm: '',
-      department: '',
-      role: ''
-    });
-    setHasSearched(false);
-    setEmployees([]);
-    setFilteredEmployees([]);
-    setTotalCount(0);
-    toast({
-      title: "退出查看模式",
-      description: "已退出只读查看模式"
-    });
+  // 检查用户权限
+  const canManageUsers = () => {
+    const user = getCurrentUser();
+    return user && user.isAdmin;
   };
-
-  // 监听搜索参数变化（不再自动加载数据）
-  useEffect(() => {
-    // 移除自动加载数据的功能
-  }, [searchParams]);
-  return <div className="min-h-screen bg-gray-50 p-6">
+  return <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
       <div className="max-w-7xl mx-auto">
-        <div className="flex justify-between items-center mb-6">
+        {/* 页面头部 */}
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-8 gap-4">
           <div className="flex items-center space-x-4">
-            <h1 className="text-3xl font-bold text-gray-900 flex items-center">
-              <Users className="w-8 h-8 mr-3" />
-              用户管理
-              {isReadOnlySearch && <span className="ml-2 text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded-full">查看模式</span>}
-            </h1>
-            <Button variant="outline" onClick={handleGoHome} className="flex items-center">
+            <div className="bg-white rounded-full p-3 shadow-lg">
+              <Users className="w-8 h-8 text-blue-600" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
+                用户管理系统
+                {isReadOnlySearch && <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                    查看模式
+                  </Badge>}
+              </h1>
+              <p className="text-gray-600 mt-1">管理企业员工信息和权限分配</p>
+            </div>
+          </div>
+          
+          <div className="flex flex-wrap gap-3">
+            <Button variant="outline" onClick={handleGoHome} className="flex items-center bg-white hover:bg-gray-50 border-gray-300">
               <Home className="w-4 h-4 mr-2" />
               返回首页
             </Button>
-          </div>
-          <div className="flex space-x-3">
-            {/* 已移除退出查看模式按钮 */}
-            <Button variant="outline" onClick={() => setImportExportOpen(true)} className="flex items-center bg-green-100 text-green-800 hover:bg-green-200">
-              <Upload className="w-4 h-4 mr-2" />
-              批量操作（JSON格式）
-            </Button>
-            <Button onClick={() => {
-            setSelectedEmployee(null);
-            setEditDialogOpen(true);
-          }}>
-            <Plus className="w-4 h-4 mr-2" />
-            新增用户
-          </Button>
+            
+            {canManageUsers() && <>
+                <Button variant="outline" onClick={() => setImportExportOpen(true)} className="flex items-center bg-green-50 text-green-700 hover:bg-green-100 border-green-200">
+                  <Upload className="w-4 h-4 mr-2" />
+                  批量操作
+                </Button>
+                <Button onClick={() => {
+              setSelectedEmployee(null);
+              setEditDialogOpen(true);
+            }} className="flex items-center bg-blue-600 hover:bg-blue-700">
+                  <Plus className="w-4 h-4 mr-2" />
+                  新增用户
+                </Button>
+              </>}
           </div>
         </div>
 
-        <Card>
-          <CardHeader>
+        {/* 用户统计卡片 */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <Card className="bg-gradient-to-r from-blue-500 to-blue-600 text-white">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-blue-100">总用户数</p>
+                  <p className="text-3xl font-bold">{totalCount}</p>
+                </div>
+                <Users className="w-12 h-12 opacity-20" />
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-gradient-to-r from-green-500 to-green-600 text-white">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-green-100">当前页面</p>
+                  <p className="text-3xl font-bold">{filteredEmployees.length}</p>
+                </div>
+                <User className="w-12 h-12 opacity-20" />
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-gradient-to-r from-purple-500 to-purple-600 text-white">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-purple-100">权限状态</p>
+                  <p className="text-3xl font-bold">
+                    {canManageUsers() ? '管理员' : '普通用户'}
+                  </p>
+                </div>
+                <Shield className="w-12 h-12 opacity-20" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* 主内容区域 */}
+        <Card className="shadow-xl border-0">
+          <CardHeader className="bg-gradient-to-r from-gray-50 to-gray-100 border-b">
             <CardTitle className="flex items-center justify-between">
-              <span>用户列表</span>
-              {isReadOnlySearch && <span className="text-sm text-blue-600 font-normal">当前为只读查看模式</span>}
+              <span className="text-xl font-semibold text-gray-900">用户列表</span>
+              {isReadOnlySearch && <span className="text-sm text-blue-600 font-normal flex items-center">
+                  <User className="w-4 h-4 mr-1" />
+                  当前为只读查看模式
+                </span>}
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="flex flex-col sm:flex-row gap-4 mb-4">
-              <EmployeeSearchFilter onSearch={handleSearch} readOnly={isReadOnlySearch} initialSearchTerm={isReadOnlySearch ? searchParams.searchTerm : ''} />
+          
+          <CardContent className="p-6">
+            {/* 搜索筛选区域 */}
+            <div className="flex flex-col lg:flex-row gap-4 mb-6">
+              <div className="flex-1">
+                <EmployeeSearchFilter onSearch={handleSearch} readOnly={isReadOnlySearch} initialSearchTerm={isReadOnlySearch ? searchParams.searchTerm : ''} />
+              </div>
               
-              {/* 条件渲染按钮组 */}
-              {isReadOnlySearch ?
-            // 只读模式下的按钮组
-            <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
-                  <Button onClick={handleRefresh} className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700">
+              {/* 操作按钮组 */}
+              <div className="flex flex-col sm:flex-row gap-3">
+                {isReadOnlySearch ? <Button onClick={handleRefresh} className="bg-blue-600 hover:bg-blue-700">
                     <RefreshCw className="w-4 h-4 mr-2" />
-                    刷新
-                  </Button>
-                </div> :
-            // 普通模式下的按钮组
-            <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
-                  <Button onClick={handleSearchClick} className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700">
-                    <Search className="w-4 h-4 mr-2" />
-                    搜索
-                  </Button>
-                  <Button variant="outline" onClick={handleReset} className="w-full sm:w-auto">
-                    <Filter className="w-4 h-4 mr-2" />
-                    重置
-                  </Button>
-                </div>}
+                    刷新信息
+                  </Button> : <>
+                    <Button onClick={handleSearchClick} className="bg-blue-600 hover:bg-blue-700">
+                      <Search className="w-4 h-4 mr-2" />
+                      搜索
+                    </Button>
+                    <Button variant="outline" onClick={handleReset}>
+                      <Filter className="w-4 h-4 mr-2" />
+                      重置
+                    </Button>
+                  </>}
+              </div>
             </div>
             
+            {/* 内容区域 */}
             <div className="mt-4">
-              {/* 显示搜索提示 */}
-              {!hasSearched && <div className="text-center py-8 bg-gray-50 rounded-lg">
-                  <Search className="w-12 h-12 mx-auto text-gray-400 mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">
-                    {isReadOnlySearch ? '正在加载您的信息...' : '请进行搜索'}
+              {!hasSearched ? <div className="text-center py-12 bg-gradient-to-br from-gray-50 to-blue-50 rounded-lg border-2 border-dashed border-gray-200">
+                  <Search className="w-16 h-16 mx-auto text-gray-400 mb-4" />
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                    {isReadOnlySearch ? '正在加载您的信息...' : '开始搜索用户'}
                   </h3>
-                  <p className="text-gray-600">
-                    {isReadOnlySearch ? '系统将自动显示您的个人信息' : '输入搜索条件后点击"搜索"按钮查看用户列表'}
+                  <p className="text-gray-600 max-w-md mx-auto">
+                    {isReadOnlySearch ? '系统将自动显示您的个人信息，确保数据安全' : '输入姓名、用户名或工号进行搜索，支持部门筛选'}
                   </p>
-                </div>}
-              
-              {/* 显示搜索结果 */}
-              {hasSearched && <EmployeeTable employees={filteredEmployees} onEdit={emp => {
+                </div> : <EmployeeTable employees={filteredEmployees} onEdit={emp => {
               setSelectedEmployee(emp);
               setEditDialogOpen(true);
-            }} onDelete={handleDelete} loading={loading} totalCount={totalCount} currentPage={currentPage} pageSize={pageSize} onPageChange={handlePageChange} />}
+            }} onDelete={handleDelete} loading={loading} totalCount={totalCount} currentPage={currentPage} pageSize={pageSize} onPageChange={handlePageChange} canEdit={canManageUsers()} />}
             </div>
           </CardContent>
         </Card>
 
-        <EmployeeEditDialog open={editDialogOpen} onOpenChange={setEditDialogOpen} employee={selectedEmployee} onSave={handleSave} $w={$w} />
+        {/* 对话框组件 */}
+        <EmployeeEditDialog open={editDialogOpen} onOpenChange={setEditDialogOpen} employee={selectedEmployee} onSave={handleSave} $w={$w} currentUser={currentUser} />
         
-        <UserJsonImportExport open={importExportOpen} onOpenChange={setImportExportOpen} onComplete={handleImportExportComplete} $w={$w} // 传递$w参数
-      />
+        <UserJsonImportExport open={importExportOpen} onOpenChange={setImportExportOpen} onComplete={handleImportExportComplete} $w={$w} />
       </div>
     </div>;
 }

@@ -3,14 +3,15 @@ import React, { useState, useEffect } from 'react';
 // @ts-ignore;
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, Input, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Button, useToast, Checkbox } from '@/components/ui';
 // @ts-ignore;
-import { Loader2, Eye, EyeOff } from 'lucide-react';
+import { Loader2, Eye, EyeOff, AlertCircle } from 'lucide-react';
 
 export function EmployeeEditDialog({
   open,
   onOpenChange,
   employee,
   onSave,
-  $w // 添加$w参数
+  $w,
+  currentUser // 添加当前用户信息参数
 }) {
   const [formData, setFormData] = useState({
     name: '',
@@ -54,9 +55,32 @@ export function EmployeeEditDialog({
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState({});
   const [showPassword, setShowPassword] = useState(false);
+  const [permissionError, setPermissionError] = useState('');
   const {
     toast
   } = useToast();
+
+  // 检查当前用户权限
+  const checkPermission = () => {
+    if (!currentUser) {
+      setPermissionError('无法获取当前用户信息');
+      return false;
+    }
+
+    // 如果是管理员，允许修改任何用户
+    if (currentUser.isAdmin) {
+      setPermissionError('');
+      return true;
+    }
+
+    // 如果是普通用户，只能修改自己的数据
+    if (employee && currentUser.userId !== employee._id) {
+      setPermissionError('您没有权限修改其他用户的信息');
+      return false;
+    }
+    setPermissionError('');
+    return true;
+  };
 
   // 验证身份证号函数
   const validateIdCard = idCard => {
@@ -150,6 +174,9 @@ export function EmployeeEditDialog({
   // 初始化表单数据
   useEffect(() => {
     if (open) {
+      // 检查权限
+      checkPermission();
+
       // 并行加载角色和部门数据
       Promise.all([loadRoles(), loadDepartments()]);
       if (employee) {
@@ -233,7 +260,7 @@ export function EmployeeEditDialog({
       }
       setErrors({});
     }
-  }, [open, employee]);
+  }, [open, employee, currentUser]);
 
   // 获取角色名称
   const getRoleName = roleId => {
@@ -382,6 +409,15 @@ export function EmployeeEditDialog({
 
   // 处理表单提交 - 使用数据源方法
   const handleSubmit = async () => {
+    // 检查权限
+    if (!checkPermission()) {
+      toast({
+        title: "权限不足",
+        description: permissionError,
+        variant: "destructive"
+      });
+      return;
+    }
     if (!validateForm()) {
       toast({
         title: "表单验证失败",
@@ -653,6 +689,17 @@ export function EmployeeEditDialog({
         <DialogTitle>{employee ? '编辑用户' : '新增用户'}</DialogTitle>
       </DialogHeader>
 
+      {/* 权限警告 */}
+      {permissionError && <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+          <div className="flex items-center">
+            <AlertCircle className="w-5 h-5 text-red-600 mr-2" />
+            <span className="text-red-800 font-medium">{permissionError}</span>
+          </div>
+          {currentUser && !currentUser.isAdmin && <p className="text-red-600 text-sm mt-1">
+              您只能修改自己的信息。如需修改其他用户信息，请联系管理员。
+            </p>}
+        </div>}
+
       <div className="space-y-6 py-4">
         {renderBasicInfo()}
         {renderWorkInfo()}
@@ -666,7 +713,7 @@ export function EmployeeEditDialog({
         <Button variant="outline" onClick={() => onOpenChange(false)}>
           取消
         </Button>
-        <Button onClick={handleSubmit} disabled={saving || rolesLoading}>
+        <Button onClick={handleSubmit} disabled={saving || rolesLoading || !!permissionError} className={permissionError ? 'opacity-50 cursor-not-allowed' : ''}>
           {saving ? <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div> : '保存'}
         </Button>
       </DialogFooter>
