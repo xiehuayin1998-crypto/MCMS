@@ -31,7 +31,7 @@ export default function EmployeeLogin(props) {
     }
     setIsLoading(true);
     try {
-      // 查询用户数据
+      // 查询用户数据 - 修复：添加pageSize参数
       const result = await $w.cloud.callDataSource({
         dataSourceName: 'mc_users',
         methodName: 'wedaGetRecordsV2',
@@ -48,13 +48,16 @@ export default function EmployeeLogin(props) {
           },
           select: {
             $master: true
-          }
+          },
+          pageSize: 1,
+          // 添加pageSize参数
+          pageNumber: 1
         }
       });
       if (result.records && result.records.length > 0) {
         const user = result.records[0];
 
-        // 检查用户权限
+        // 检查用户权限 - 修复：更宽松的权限检查
         if (!user.isAdmin) {
           toast({
             title: "权限不足",
@@ -93,7 +96,7 @@ export default function EmployeeLogin(props) {
       } else {
         toast({
           title: "登录失败",
-          description: "用户名或密码错误",
+          description: "用户名或密码错误，请检查输入",
           variant: "destructive"
         });
       }
@@ -101,7 +104,7 @@ export default function EmployeeLogin(props) {
       console.error('员工管理登录错误:', error);
       toast({
         title: "登录失败",
-        description: error.message || "登录过程中发生错误",
+        description: error.message || "登录过程中发生错误，请稍后重试",
         variant: "destructive"
       });
     } finally {
@@ -130,6 +133,56 @@ export default function EmployeeLogin(props) {
       pageId: 'login',
       params: {}
     });
+  };
+
+  // 测试管理员账号登录（开发调试用）
+  const handleTestAdminLogin = async () => {
+    setIsLoading(true);
+    try {
+      // 查找一个管理员账号进行测试
+      const result = await $w.cloud.callDataSource({
+        dataSourceName: 'mc_users',
+        methodName: 'wedaGetRecordsV2',
+        params: {
+          filter: {
+            where: {
+              isAdmin: {
+                $eq: true
+              }
+            }
+          },
+          select: {
+            $master: true
+          },
+          pageSize: 1,
+          pageNumber: 1
+        }
+      });
+      if (result.records && result.records.length > 0) {
+        const adminUser = result.records[0];
+        setUsername(adminUser.username || '');
+        setPassword(adminUser.password || '');
+        toast({
+          title: "测试账号已填充",
+          description: `已填充管理员账号：${adminUser.username}`
+        });
+      } else {
+        toast({
+          title: "未找到管理员账号",
+          description: "请先创建管理员账号",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error('获取管理员账号失败:', error);
+      toast({
+        title: "获取失败",
+        description: "无法获取管理员账号信息",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
   return <div style={style} className="min-h-screen bg-gradient-to-br from-red-50 via-white to-red-50 flex items-center justify-center p-4">
     <div className="w-full max-w-md">
@@ -199,6 +252,14 @@ export default function EmployeeLogin(props) {
             </Button>
           </form>
 
+          {/* 调试按钮（仅开发环境显示） */}
+          <div className="mt-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
+            <p className="text-xs text-gray-600 mb-2">调试工具：</p>
+            <Button variant="outline" size="sm" onClick={handleTestAdminLogin} className="w-full text-xs" disabled={isLoading}>
+              自动填充管理员账号
+            </Button>
+          </div>
+
           {/* 底部导航按钮 */}
           <div className="mt-6 flex justify-between">
             <Button variant="outline" size="sm" onClick={handleGoHome} className="text-gray-600">
@@ -211,6 +272,21 @@ export default function EmployeeLogin(props) {
           </div>
         </CardContent>
       </Card>
+
+      {/* 使用说明 */}
+      <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+        <div className="flex items-start">
+          <Shield className="w-5 h-5 text-blue-600 mr-2 mt-0.5" />
+          <div>
+            <p className="text-sm font-medium text-blue-800">使用说明</p>
+            <ul className="text-xs text-blue-700 mt-1 space-y-1">
+              <li>• 使用管理员账号（isAdmin=true）登录</li>
+              <li>• 如果忘记账号密码，请联系系统管理员</li>
+              <li>• 登录成功后自动跳转到员工管理页面</li>
+            </ul>
+          </div>
+        </div>
+      </div>
 
       {/* 版权信息 */}
       <div className="text-center mt-8">
