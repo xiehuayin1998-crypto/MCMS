@@ -52,7 +52,7 @@ module.exports = async function(params, context) {
     
     if (result.updated === 1) {
       return {
-        success: true,
+        success: false,
         message: '用户信息更新成功',
         data: result
       };
