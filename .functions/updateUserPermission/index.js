@@ -2,13 +2,6 @@
 // 使用云开发环境内置的SDK，无需额外安装依赖
 const tcb = require('tcb-admin-node');
 
-// 初始化云开发环境
-const app = tcb.init({
-  env: tcb.getCurrentEnv()
-});
-
-const db = app.database();
-
 /**
  * 用户权限管理云函数
  * 用于绕过行级权限限制，直接修改用户信息
@@ -22,9 +15,16 @@ const db = app.database();
  * @returns {Object} 操作结果
  */
 exports.main = async (event, context) => {
-  const { action, data, userId, filter, currentUser } = event;
-  
   try {
+    // 初始化云开发环境
+    const app = tcb.init({
+      env: tcb.getCurrentEnv()
+    });
+    
+    const db = app.database();
+    
+    const { action, data, userId, filter, currentUser } = event;
+    
     // 验证当前用户是否为管理员
     if (!currentUser || !currentUser.isAdmin) {
       return {
