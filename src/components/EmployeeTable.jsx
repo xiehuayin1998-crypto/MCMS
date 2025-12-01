@@ -13,7 +13,8 @@ export function EmployeeTable({
   totalCount,
   currentPage,
   pageSize,
-  onPageChange
+  onPageChange,
+  $w // 添加 $w 参数
 }) {
   const [roles, setRoles] = useState([]);
   const [expandedRows, setExpandedRows] = useState(new Set());
@@ -219,26 +220,7 @@ export function EmployeeTable({
                     {employee.employee_number || '-'}
                   </Badge>
                 </TableCell>
-                {/* <TableCell>
-                  <Badge variant="secondary" className="text-xs">
-                    {employee.sex || '-'}
-                  </Badge>
-                </TableCell> */}
-                {/* <TableCell>
-                  <Badge variant="outline" className="text-xs">
-                    {employee.employee_type || '-'}
-                  </Badge>
-                </TableCell> */}
-                {/* <TableCell>{employee.Workplace || '-'}</TableCell> */}
                 <TableCell>{employee.department || '-'}</TableCell>
-                {/* <TableCell>
-                  <div className="flex flex-wrap gap-1">
-                    {roleNames.map((roleName, index) => <Badge key={index} variant="secondary" className="text-xs">
-                      {roleName}
-                    </Badge>)}
-                  </div>
-                </TableCell> */}
-                {/* <TableCell>{formatDate(employee.join_date)}</TableCell> */}
                 <TableCell>
                   <div className="flex space-x-1">
                     <Button variant="ghost" size="sm" onClick={() => onEdit(employee)}>

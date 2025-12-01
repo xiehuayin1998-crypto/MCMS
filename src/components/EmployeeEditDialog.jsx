@@ -380,7 +380,7 @@ export function EmployeeEditDialog({
     });
   };
 
-  // 处理表单提交
+  // 处理表单提交 - 使用云函数进行权限控制
   const handleSubmit = async () => {
     if (!validateForm()) {
       toast({
@@ -445,19 +445,12 @@ export function EmployeeEditDialog({
       console.log('提交的数据:', updateData); // 调试日志
 
       if (employee && employee._id) {
-        // 更新现有用户
-        await $w.cloud.callDataSource({
-          dataSourceName: 'mc_users',
-          methodName: 'wedaUpdateV2',
-          params: {
-            data: updateData,
-            filter: {
-              where: {
-                _id: {
-                  $eq: employee._id
-                }
-              }
-            }
+        // 更新现有用户 - 使用云函数进行权限控制
+        await $w.cloud.callFunction({
+          name: 'user-update-with-permission',
+          data: {
+            userId: employee._id,
+            updateData: updateData
           }
         });
         toast({
@@ -465,12 +458,11 @@ export function EmployeeEditDialog({
           description: "用户信息已更新"
         });
       } else {
-        // 创建新用户
-        await $w.cloud.callDataSource({
-          dataSourceName: 'mc_users',
-          methodName: 'wedaCreateV2',
-          params: {
-            data: updateData
+        // 创建新用户 - 使用云函数进行权限控制
+        await $w.cloud.callFunction({
+          name: 'user-update-with-permission',
+          data: {
+            updateData: updateData
           }
         });
         toast({
