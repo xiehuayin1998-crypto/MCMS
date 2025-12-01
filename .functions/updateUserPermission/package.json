@@ -1,0 +1,10 @@
+
+{
+  "name": "updateUserPermission",
+  "version": "1.0.0",
+  "description": "用户权限管理云函数，用于绕过行级权限限制",
+  "main": "index.js",
+  "dependencies": {
+    "@cloudbase/node-sdk": "^2.0.0"
+  }
+}

@@ -312,7 +312,7 @@ export default function EmployeeManagement(props) {
     await loadEmployees(currentPage);
   };
 
-  // 处理删除 - 使用重构后的权限判断（保持不变）
+  // 处理删除 - 使用云函数绕过行级权限
   const handleDelete = async employee => {
     try {
       if (!currentUserInfo) {
@@ -332,28 +332,30 @@ export default function EmployeeManagement(props) {
         });
         return;
       }
-      await $w.cloud.callDataSource({
-        dataSourceName: 'mc_users',
-        methodName: 'wedaDeleteV2',
-        params: {
-          filter: {
-            where: {
-              _id: {
-                $eq: employee._id
-              }
-            }
-          }
+
+      // 使用云函数绕过行级权限进行删除
+      const result = await $w.cloud.callFunction({
+        name: 'updateUserPermission',
+        data: {
+          action: 'delete',
+          userId: employee._id,
+          currentUser: currentUserInfo
         }
       });
-      toast({
-        title: "删除成功",
-        description: "用户已删除"
-      });
-      const newTotalCount = totalCount - 1;
-      const newTotalPages = Math.ceil(newTotalCount / pageSize);
-      const newPage = currentPage > newTotalPages ? Math.max(1, newTotalPages) : currentPage;
-      loadEmployees(newPage);
+      if (result.result && result.result.success) {
+        toast({
+          title: "删除成功",
+          description: "用户已删除"
+        });
+        const newTotalCount = totalCount - 1;
+        const newTotalPages = Math.ceil(newTotalCount / pageSize);
+        const newPage = currentPage > newTotalPages ? Math.max(1, newTotalPages) : currentPage;
+        loadEmployees(newPage);
+      } else {
+        throw new Error(result.result?.error || '删除失败');
+      }
     } catch (error) {
+      console.error('删除失败:', error);
       toast({
         title: "删除失败",
         description: error.message || "无法删除用户",

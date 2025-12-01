@@ -390,23 +390,7 @@ export function EmployeeEditDialog({
     });
   };
 
-  // 使用云函数绕过权限检查更新用户信息
-  const updateUserWithBypass = async (userId, updateData) => {
-    try {
-      const result = await $w.cloud.callFunction({
-        name: 'updateUserBypassPermission',
-        data: {
-          userId: userId,
-          updateData: updateData
-        }
-      });
-      return result;
-    } catch (error) {
-      throw new Error(`云函数调用失败: ${error.message}`);
-    }
-  };
-
-  // 处理表单提交 - 使用云函数绕过权限检查
+  // 处理表单提交 - 使用云函数绕过行级权限
   const handleSubmit = async () => {
     if (!checkPermission()) {
       toast({
@@ -469,108 +453,51 @@ export function EmployeeEditDialog({
         }
       });
       if (employee && employee._id) {
-        // 使用云函数绕过行级权限检查
-        const result = await updateUserWithBypass(employee._id, updateData);
-        if (result.success) {
+        // 使用云函数绕过行级权限进行更新
+        const result = await $w.cloud.callFunction({
+          name: 'updateUserPermission',
+          data: {
+            action: 'update',
+            userId: employee._id,
+            data: updateData,
+            currentUser: currentUser
+          }
+        });
+        if (result.result && result.result.success) {
           toast({
             title: "更新成功",
             description: "用户信息已更新"
           });
-          onSave();
-          onOpenChange(false);
         } else {
-          throw new Error(result.message || '更新失败');
+          throw new Error(result.result?.error || '更新失败');
         }
       } else {
-        // 新建用户仍然使用数据源方法
-        await $w.cloud.callDataSource({
-          dataSourceName: 'mc_users',
-          methodName: 'wedaCreateV2',
-          params: {
-            data: updateData
+        // 使用云函数创建新用户
+        const result = await $w.cloud.callFunction({
+          name: 'updateUserPermission',
+          data: {
+            action: 'create',
+            data: updateData,
+            currentUser: currentUser
           }
         });
-        toast({
-          title: "创建成功",
-          description: "新用户已创建"
-        });
-        onSave();
-        onOpenChange(false);
+        if (result.result && result.result.success) {
+          toast({
+            title: "创建成功",
+            description: "新用户已创建"
+          });
+        } else {
+          throw new Error(result.result?.error || '创建失败');
+        }
       }
+      onSave();
+      onOpenChange(false);
     } catch (error) {
       console.error('保存失败:', error);
+      // 修复：提供更详细的错误信息
       let errorMessage = error.message || "无法保存用户信息";
-      // 如果云函数调用失败，尝试使用原始方法作为备用方案
-      if (error.message && error.message.includes('云函数调用失败')) {
-        try {
-          // 重新构建updateData，确保在catch块内可用
-          const fallbackUpdateData = {
-            name: formData.name.trim(),
-            username: formData.username.trim(),
-            department: formData.department || '',
-            roles: formData.roles.filter(id => typeof id === 'string'),
-            roles_level: formData.roles_level.filter(l => typeof l === 'number'),
-            isAdmin: Boolean(formData.isAdmin),
-            permissions: formData.permissions || '',
-            isMinister: Boolean(formData.isMinister),
-            navigationOrder: formData.navigationOrder || '',
-            ...(formData.password && {
-              password: formData.password
-            }),
-            sex: formData.sex || '',
-            employee_number: formData.employee_number.trim(),
-            employee_type: formData.employee_type || '',
-            Workplace: formData.Workplace.trim(),
-            company: formData.company.trim(),
-            headquarters_location: formData.headquarters_location.trim(),
-            job_position_number: formData.job_position_number.trim(),
-            birth_place: formData.birth_place.trim(),
-            social_security_number: formData.social_security_number.trim(),
-            rfc: formData.rfc.trim(),
-            education: formData.education || '',
-            graduation_institution: formData.graduation_institution.trim(),
-            major: formData.major.trim(),
-            country_of_citizenship: formData.country_of_citizenship || '',
-            address: formData.address.trim(),
-            telephone_number: formData.telephone_number.trim(),
-            ID_number: formData.ID_number.trim(),
-            e_mail: formData.e_mail.trim(),
-            emergency_contact: formData.emergency_contact.trim(),
-            telephone_number_of_emergency_contact: formData.telephone_number_of_emergency_contact.trim(),
-            join_date: formData.join_date ? adjustDateForMexico(formData.join_date) : null,
-            birthday: formData.birthday ? adjustDateForMexico(formData.birthday) : null,
-            age: formData.age ? parseInt(formData.age) : null
-          };
-          Object.keys(fallbackUpdateData).forEach(key => {
-            if (fallbackUpdateData[key] === '' || fallbackUpdateData[key] === null) {
-              delete fallbackUpdateData[key];
-            }
-          });
-          // 备用方案：尝试使用原始数据源方法
-          await $w.cloud.callDataSource({
-            dataSourceName: 'mc_users',
-            methodName: 'wedaUpdateV2',
-            params: {
-              data: fallbackUpdateData,
-              filter: {
-                where: {
-                  _id: {
-                    $eq: employee._id
-                  }
-                }
-              }
-            }
-          });
-          toast({
-            title: "更新成功",
-            description: "用户信息已更新（使用备用方法）"
-          });
-          onSave();
-          onOpenChange(false);
-          return;
-        } catch (fallbackError) {
-          errorMessage = `云函数调用失败，备用方法也失败: ${fallbackError.message}`;
-        }
+      if (error.message && error.message.includes('行权限')) {
+        errorMessage = "权限配置问题：请联系系统管理员检查数据模型的行级权限设置。管理员应该可以修改所有用户数据。";
       }
       toast({
         title: "操作失败",
