@@ -521,9 +521,13 @@ export default function EmployeeManagement(props) {
                 <p className="text-3xl font-bold">
                   {canManageUsers() ? '管理员' : '普通用户'}
                 </p>
-                {currentUserInfo && <p className="text-purple-200 text-sm mt-1">
-                    {currentUserInfo.name} ({currentUserInfo.employee_number || '无工号'})
-                  </p>}
+                {currentUserInfo && <div className="text-purple-200 text-sm mt-2">
+                    <p><strong>用户名:</strong> {currentUserInfo.username || '未设置'}</p>
+                    <p><strong>姓名:</strong> {currentUserInfo.name || '未设置'}</p>
+                    <p><strong>工号:</strong> {currentUserInfo.employee_number || '未设置'}</p>
+                    <p><strong>部门:</strong> {currentUserInfo.department || '未设置'}</p>
+                    <p><strong>isAdmin状态:</strong> {currentUserInfo.isAdmin ? '是' : '否'}</p>
+                  </div>}
               </div>
               <Shield className="w-12 h-12 opacity-20" />
             </div>
