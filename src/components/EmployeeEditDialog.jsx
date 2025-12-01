@@ -390,7 +390,7 @@ export function EmployeeEditDialog({
     });
   };
 
-  // 处理表单提交 - 使用云函数绕过行级权限
+  // 处理表单提交 - 修复：管理员应该可以修改任何用户
   const handleSubmit = async () => {
     if (!checkPermission()) {
       toast({
@@ -453,42 +453,37 @@ export function EmployeeEditDialog({
         }
       });
       if (employee && employee._id) {
-        // 使用云函数绕过行级权限进行更新
-        const result = await $w.cloud.callFunction({
-          name: 'updateUserPermission',
-          data: {
-            action: 'update',
-            userId: employee._id,
+        // 修复：管理员应该可以修改任何用户，无需检查行级权限
+        await $w.cloud.callDataSource({
+          dataSourceName: 'mc_users',
+          methodName: 'wedaUpdateV2',
+          params: {
             data: updateData,
-            currentUser: currentUser
+            filter: {
+              where: {
+                _id: {
+                  $eq: employee._id
+                }
+              }
+            }
           }
         });
-        if (result.result && result.result.success) {
-          toast({
-            title: "更新成功",
-            description: "用户信息已更新"
-          });
-        } else {
-          throw new Error(result.result?.error || '更新失败');
-        }
+        toast({
+          title: "更新成功",
+          description: "用户信息已更新"
+        });
       } else {
-        // 使用云函数创建新用户
-        const result = await $w.cloud.callFunction({
-          name: 'updateUserPermission',
-          data: {
-            action: 'create',
-            data: updateData,
-            currentUser: currentUser
+        await $w.cloud.callDataSource({
+          dataSourceName: 'mc_users',
+          methodName: 'wedaCreateV2',
+          params: {
+            data: updateData
           }
         });
-        if (result.result && result.result.success) {
-          toast({
-            title: "创建成功",
-            description: "新用户已创建"
-          });
-        } else {
-          throw new Error(result.result?.error || '创建失败');
-        }
+        toast({
+          title: "创建成功",
+          description: "新用户已创建"
+        });
       }
       onSave();
       onOpenChange(false);
