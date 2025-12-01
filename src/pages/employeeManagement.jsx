@@ -3,7 +3,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 // @ts-ignore;
 import { Button, Card, CardContent, CardHeader, CardTitle, useToast, Badge } from '@/components/ui';
 // @ts-ignore;
-import { Plus, Users, Home, Upload, Search, Filter, RefreshCw, Shield, User, ChevronDown, Calendar, BookOpen, FileText, LayoutDashboard } from 'lucide-react';
+import { Plus, Users, Home, Upload, Search, Filter, RefreshCw, Shield, User, ChevronDown, Calendar, BookOpen, FileText, LayoutDashboard, UserCheck, UserX } from 'lucide-react';
 
 import { UserHeader } from '@/components/UserHeader';
 import { EmployeeTable } from '@/components/EmployeeTable';
@@ -487,8 +487,8 @@ export default function EmployeeManagement(props) {
         </div>
       </div>
 
-      {/* 用户统计卡片 */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      {/* 用户统计卡片 - 修改为4列布局 */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <Card className="bg-gradient-to-r from-blue-500 to-blue-600 text-white">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -521,15 +521,36 @@ export default function EmployeeManagement(props) {
                 <p className="text-3xl font-bold">
                   {canManageUsers() ? '管理员' : '普通用户'}
                 </p>
-                {currentUserInfo && <div className="text-purple-200 text-sm mt-2">
-                    <p><strong>用户名:</strong> {currentUserInfo.username || '未设置'}</p>
-                    <p><strong>姓名:</strong> {currentUserInfo.name || '未设置'}</p>
-                    <p><strong>工号:</strong> {currentUserInfo.employee_number || '未设置'}</p>
-                    <p><strong>部门:</strong> {currentUserInfo.department || '未设置'}</p>
-                    <p><strong>isAdmin状态:</strong> {currentUserInfo.isAdmin ? '是' : '否'}</p>
-                  </div>}
+                {currentUserInfo && <p className="text-purple-200 text-sm mt-1">
+                    {currentUserInfo.name} ({currentUserInfo.employee_number || '无工号'})
+                  </p>}
               </div>
               <Shield className="w-12 h-12 opacity-20" />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* 新增：当前用户信息卡片 */}
+        <Card className="bg-gradient-to-r from-orange-500 to-orange-600 text-white">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-orange-100">当前用户</p>
+                <p className="text-2xl font-bold truncate max-w-[150px]">
+                  {currentUserInfo ? currentUserInfo.username : '未登录'}
+                </p>
+                <div className="flex items-center mt-2">
+                  {currentUserInfo ? <>
+                      {currentUserInfo.isAdmin ? <UserCheck className="w-4 h-4 mr-1 text-green-300" /> : <UserX className="w-4 h-4 mr-1 text-red-300" />}
+                      <span className="text-orange-200 text-sm">
+                        {currentUserInfo.isAdmin ? '管理员' : '普通用户'}
+                      </span>
+                    </> : <span className="text-orange-200 text-sm">未获取到用户信息</span>}
+                </div>
+              </div>
+              <div className="bg-orange-400/20 rounded-full p-3">
+                {currentUserInfo && currentUserInfo.isAdmin ? <UserCheck className="w-8 h-8 text-white" /> : <UserX className="w-8 h-8 text-white" />}
+              </div>
             </div>
           </CardContent>
         </Card>
