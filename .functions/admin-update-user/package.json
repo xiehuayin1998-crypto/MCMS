@@ -1,0 +1,11 @@
+
+    {
+      "name": "admin-update-user",
+      "version": "1.0.0",
+      "description": "管理员权限更新用户信息的云函数，绕过行级权限限制",
+      "main": "index.js",
+      "dependencies": {
+        "@cloudbase/node-sdk": "^3.3.7"
+      }
+    }
+  

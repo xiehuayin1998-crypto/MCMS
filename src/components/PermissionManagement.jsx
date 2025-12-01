@@ -1,39 +1,125 @@
 // @ts-ignore;
 import React, { useState, useEffect } from 'react';
 // @ts-ignore;
-import { Button, Card, CardContent, CardHeader, CardTitle, useToast, Input, Label, Tabs, TabsContent, TabsList, TabsTrigger, Badge, Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious, PaginationEllipsis } from '@/components/ui';
+import { Button, Card, CardContent, CardHeader, CardTitle, useToast, Input, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Badge, Tabs, TabsContent, TabsList, TabsTrigger, Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, Textarea, Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious, PaginationEllipsis, Alert, AlertDescription } from '@/components/ui';
 // @ts-ignore;
-import { Plus, Edit, Trash2, Shield, User, Users, Search, RefreshCw } from 'lucide-react';
+import { Plus, Edit, Trash2, Shield, User, Users, CheckCircle, XCircle, Search, RefreshCw, AlertCircle, FileText, Filter } from 'lucide-react';
 
-// 导入子组件
-// @ts-ignore;
-import { RoleFormDialog } from './RoleFormDialog';
-// @ts-ignore;
-import { UserRoleDialog } from './UserRoleDialog';
-// @ts-ignore;
-import { SyncStatusAlert } from './SyncStatusAlert';
-// @ts-ignore;
-import { PERMISSION_LIST, PERMISSION_GROUPS, parsePermissions, hasUserRoles, getUserPermissionCount } from './PermissionConstants';
+// 预定义的权限列表
+const PERMISSION_LIST = {
+  // 用户管理权限
+  USER_VIEW: 'user.view',
+  USER_CREATE: 'user.create',
+  USER_EDIT: 'user.edit',
+  USER_DELETE: 'user.delete',
+  // 角色管理权限
+  ROLE_VIEW: 'role.view',
+  ROLE_CREATE: 'role.create',
+  ROLE_EDIT: 'role.edit',
+  ROLE_DELETE: 'role.delete',
+  // 部门管理权限
+  DEPARTMENT_VIEW: 'department.view',
+  DEPARTMENT_CREATE: 'department.create',
+  DEPARTMENT_EDIT: 'department.edit',
+  DEPARTMENT_DELETE: 'department.delete',
+  // 会议室管理权限
+  MEETING_ROOM_VIEW: 'meeting.room.view',
+  MEETING_ROOM_CREATE: 'meeting.room.create',
+  MEETING_ROOM_EDIT: 'meeting.room.edit',
+  MEETING_ROOM_DELETE: 'meeting.room.delete',
+  // 会议室预定权限
+  MEETING_BOOKING_VIEW: 'meeting.booking.view',
+  MEETING_BOOKING_CREATE: 'meeting.booking.create',
+  MEETING_BOOKING_EDIT: 'meeting.booking.edit',
+  MEETING_BOOKING_DELETE: 'meeting.booking.delete',
+  MEETING_BOOKING_APPROVE: 'meeting.booking.approve',
+  // 申请管理权限
+  APPLICATION_MANAGEMENT_VIEW: 'application.management.view',
+  APPLICATION_MANAGEMENT_APPROVE: 'application.management.approve',
+  APPLICATION_MANAGEMENT_REJECT: 'application.management.reject',
+  APPLICATION_MANAGEMENT_CANCEL: 'application.management.cancel',
+  // 文件管理权限
+  FILE_VIEW: 'file.view',
+  FILE_UPLOAD: 'file.upload',
+  FILE_EDIT: 'file.edit',
+  FILE_DELETE: 'file.delete',
+  // 规章制度权限
+  REGULATION_VIEW: 'regulation.view',
+  REGULATION_CREATE: 'regulation.create',
+  REGULATION_EDIT: 'regulation.edit',
+  REGULATION_DELETE: 'regulation.delete',
+  // 质量体系权限
+  QUALITY_VIEW: 'quality.view',
+  QUALITY_CREATE: 'quality.create',
+  QUALITY_EDIT: 'quality.edit',
+  QUALITY_DELETE: 'quality.delete',
+  // 安全环境权限
+  SAFETY_VIEW: 'safety.view',
+  SAFETY_CREATE: 'safety.create',
+  SAFETY_EDIT: 'safety.edit',
+  SAFETY_DELETE: 'safety.delete'
+};
+
+// 权限分组
+const PERMISSION_GROUPS = {
+  user: {
+    name: '用户管理',
+    permissions: ['USER_VIEW', 'USER_CREATE', 'USER_EDIT', 'USER_DELETE']
+  },
+  role: {
+    name: '角色管理',
+    permissions: ['ROLE_VIEW', 'ROLE_CREATE', 'ROLE_EDIT', 'ROLE_DELETE']
+  },
+  department: {
+    name: '部门管理',
+    permissions: ['DEPARTMENT_VIEW', 'DEPARTMENT_CREATE', 'DEPARTMENT_EDIT', 'DEPARTMENT_DELETE']
+  },
+  meeting: {
+    name: '会议室管理',
+    permissions: ['MEETING_ROOM_VIEW', 'MEETING_ROOM_CREATE', 'MEETING_ROOM_EDIT', 'MEETING_ROOM_DELETE', 'MEETING_BOOKING_VIEW', 'MEETING_BOOKING_CREATE', 'MEETING_BOOKING_EDIT', 'MEETING_BOOKING_DELETE', 'MEETING_BOOKING_APPROVE']
+  },
+  application: {
+    name: '申请管理',
+    permissions: ['APPLICATION_MANAGEMENT_VIEW', 'APPLICATION_MANAGEMENT_APPROVE', 'APPLICATION_MANAGEMENT_REJECT', 'APPLICATION_MANAGEMENT_CANCEL']
+  },
+  file: {
+    name: '文件管理',
+    permissions: ['FILE_VIEW', 'FILE_UPLOAD', 'FILE_EDIT', 'FILE_DELETE']
+  },
+  regulation: {
+    name: '规章制度',
+    permissions: ['REGULATION_VIEW', 'REGULATION_CREATE', 'REGULATION_EDIT', 'REGULATION_DELETE']
+  },
+  quality: {
+    name: '质量体系',
+    permissions: ['QUALITY_VIEW', 'QUALITY_CREATE', 'QUALITY_EDIT', 'QUALITY_DELETE']
+  },
+  safety: {
+    name: '安全环境',
+    permissions: ['SAFETY_VIEW', 'SAFETY_CREATE', 'SAFETY_EDIT', 'SAFETY_DELETE']
+  }
+};
 export function PermissionManagement({
-  user,
-  $w
+  user
 }) {
   const {
     toast
   } = useToast();
   const [roles, setRoles] = useState([]);
   const [users, setUsers] = useState([]);
+  const [filteredUsers, setFilteredUsers] = useState([]);
   const [activeTab, setActiveTab] = useState('roles');
-
-  // 对话框状态
   const [roleDialogOpen, setRoleDialogOpen] = useState(false);
   const [selectedRole, setSelectedRole] = useState(null);
+  const [roleForm, setRoleForm] = useState({
+    roleName: '',
+    roleDesc: '',
+    permissions: []
+  });
   const [userRoleDialogOpen, setUserRoleDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [userRoles, setUserRoles] = useState([]);
-
-  // 同步状态
-  const [syncStatus, setSyncStatus] = useState(null);
+  const [syncStatus, setSyncStatus] = useState(null); // null, 'syncing', 'success', 'error'
   const [syncMessage, setSyncMessage] = useState('');
   const [syncProgress, setSyncProgress] = useState(0);
   const [syncResults, setSyncResults] = useState({
@@ -41,7 +127,13 @@ export function PermissionManagement({
     success: 0,
     failed: 0,
     skipped: 0,
+    // 新增：跳过的用户数量
     details: []
+  });
+  const [debugInfo, setDebugInfo] = useState({
+    rolesData: [],
+    usersData: [],
+    syncErrors: []
   });
 
   // 分页和搜索状态
@@ -49,30 +141,6 @@ export function PermissionManagement({
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize] = useState(10);
   const [totalUsers, setTotalUsers] = useState(0);
-  const [useCloudFunction, setUseCloudFunction] = useState(false);
-
-  // 检查云函数是否存在
-  const checkCloudFunction = async () => {
-    try {
-      const result = await $w.cloud.callFunction({
-        name: 'update-user',
-        data: {
-          test: true
-        }
-      });
-      setUseCloudFunction(true);
-      return true;
-    } catch (error) {
-      if (error.code === 'FUNCTION_NOT_FOUND') {
-        console.warn('update-user 云函数未找到，将使用 wedaUpdateV2');
-        setUseCloudFunction(false);
-        return false;
-      }
-      console.warn('云函数调用失败，将使用 wedaUpdateV2:', error);
-      setUseCloudFunction(false);
-      return false;
-    }
-  };
 
   // 加载角色数据
   const loadRoles = async () => {
@@ -89,7 +157,17 @@ export function PermissionManagement({
           }]
         }
       });
+      console.log('加载角色数据结果:', result);
       setRoles(result.records || []);
+      setDebugInfo(prev => ({
+        ...prev,
+        rolesData: result.records?.map(r => ({
+          id: r._id,
+          name: r.roleName,
+          permissions: r.permissions,
+          level: r.level
+        })) || []
+      }));
     } catch (error) {
       console.error('加载角色失败:', error);
       toast({
@@ -106,6 +184,8 @@ export function PermissionManagement({
       const filter = {
         where: {}
       };
+
+      // 添加搜索条件
       if (search.trim()) {
         filter.where.$or = [{
           name: {
@@ -137,9 +217,20 @@ export function PermissionManagement({
           }]
         }
       });
+      console.log('加载用户数据结果:', result);
       setUsers(result.records || []);
+      setFilteredUsers(result.records || []);
       setTotalUsers(result.total || 0);
       setCurrentPage(page);
+      setDebugInfo(prev => ({
+        ...prev,
+        usersData: result.records?.map(u => ({
+          id: u._id,
+          name: u.name,
+          roles: u.roles,
+          permissions: u.permissions
+        })) || []
+      }));
     } catch (error) {
       toast({
         title: "加载失败",
@@ -214,23 +305,71 @@ export function PermissionManagement({
       </Pagination>;
   };
 
-  // 获取角色权限
-  const getRolePermissions = roleId => {
-    const role = roles.find(r => r._id === roleId);
-    if (!role || !role.permissions) return [];
-    return parsePermissions(role.permissions);
+  // 解析权限字符串 - 修复权限解析问题
+  const parsePermissions = permissionsStr => {
+    if (!permissionsStr) return [];
+    try {
+      // 尝试解析为JSON数组
+      const parsed = JSON.parse(permissionsStr);
+      if (Array.isArray(parsed)) {
+        return parsed;
+      }
+    } catch (error) {
+      // 如果不是JSON格式，尝试按逗号分割
+      if (typeof permissionsStr === 'string') {
+        return permissionsStr.split(',').filter(p => p.trim()).map(p => p.trim());
+      }
+    }
+    return [];
   };
 
-  // 同步单个用户的权限
+  // 根据角色ID获取角色权限 - 修复权限获取逻辑
+  const getRolePermissions = roleId => {
+    const role = roles.find(r => r._id === roleId);
+    if (!role || !role.permissions) {
+      console.log('角色权限为空:', {
+        roleId,
+        roleName: role?.roleName,
+        rolePermissions: role?.permissions
+      });
+      return [];
+    }
+    const permissions = parsePermissions(role.permissions);
+    console.log('获取角色权限:', {
+      roleId,
+      roleName: role.roleName,
+      permissionsCount: permissions.length,
+      permissions
+    });
+    return permissions;
+  };
+
+  // 检查用户是否拥有角色
+  const hasUserRoles = user => {
+    return user.roles && user.roles.length > 0;
+  };
+
+  // 同步单个用户的权限 - 修复同步逻辑
   const syncUserPermissions = async user => {
     try {
+      console.log('开始同步用户权限:', {
+        userId: user._id,
+        userName: user.name,
+        userRoles: user.roles,
+        currentPermissions: user.permissions
+      });
+
+      // 检查用户是否有角色
       if (!hasUserRoles(user)) {
+        console.log('用户没有分配角色:', user.name);
         return {
           success: false,
           message: '用户没有分配角色',
-          skipped: true
+          skipped: true // 标记为跳过
         };
       }
+
+      // 获取用户所有角色的权限并合并
       let allPermissions = [];
       let hasValidPermissions = false;
       for (const roleId of user.roles) {
@@ -238,15 +377,28 @@ export function PermissionManagement({
         if (rolePermissions.length > 0) {
           allPermissions = [...allPermissions, ...rolePermissions];
           hasValidPermissions = true;
+          console.log(`角色 ${roleId} 有 ${rolePermissions.length} 个权限`);
+        } else {
+          console.log(`角色 ${roleId} 没有配置权限`);
         }
       }
+
+      // 检查是否有有效的权限
       if (!hasValidPermissions) {
+        console.log('用户所有角色都没有配置权限:', user.name);
         return {
           success: false,
           message: '用户角色没有配置权限'
         };
       }
+
+      // 去重
       const uniquePermissions = [...new Set(allPermissions)];
+      console.log('合并后的权限:', {
+        totalPermissions: allPermissions.length,
+        uniquePermissions: uniquePermissions.length,
+        permissions: uniquePermissions
+      });
       if (uniquePermissions.length === 0) {
         return {
           success: false,
@@ -254,45 +406,25 @@ export function PermissionManagement({
         };
       }
 
-      // 更新用户权限 - 使用云函数或 wedaUpdateV2
-      let updateResult;
-      if (useCloudFunction) {
-        const result = await $w.cloud.callFunction({
-          name: 'update-user',
+      // 更新用户权限字段
+      const updateResult = await $w.cloud.callDataSource({
+        dataSourceName: 'mc_users',
+        methodName: 'wedaUpdateV2',
+        params: {
           data: {
-            userId: user._id,
-            updateData: {
-              permissions: JSON.stringify(uniquePermissions),
-              updatedAt: new Date().getTime()
-            }
-          }
-        });
-        if (result.result.success) {
-          updateResult = {
-            count: 1
-          };
-        } else {
-          throw new Error(result.result.errorMessage || '权限更新失败');
-        }
-      } else {
-        updateResult = await $w.cloud.callDataSource({
-          dataSourceName: 'mc_users',
-          methodName: 'wedaUpdateV2',
-          params: {
-            data: {
-              permissions: JSON.stringify(uniquePermissions),
-              updatedAt: new Date().getTime()
-            },
-            filter: {
-              where: {
-                _id: {
-                  $eq: user._id
-                }
+            permissions: JSON.stringify(uniquePermissions),
+            updatedAt: new Date().getTime()
+          },
+          filter: {
+            where: {
+              _id: {
+                $eq: user._id
               }
             }
           }
-        });
-      }
+        }
+      });
+      console.log('权限更新结果:', updateResult);
       if (updateResult.count > 0) {
         return {
           success: true,
@@ -300,6 +432,7 @@ export function PermissionManagement({
           permissions: uniquePermissions
         };
       } else {
+        console.log('数据库更新失败，count为0');
         return {
           success: false,
           message: '数据库更新失败'
@@ -314,7 +447,7 @@ export function PermissionManagement({
     }
   };
 
-  // 批量同步所有用户的权限
+  // 批量同步所有用户的权限 - 优化：仅同步已拥有角色的用户
   const handleBatchSync = async () => {
     setSyncStatus('syncing');
     setSyncProgress(0);
@@ -323,9 +456,15 @@ export function PermissionManagement({
       success: 0,
       failed: 0,
       skipped: 0,
+      // 新增：跳过的用户数量
       details: []
     });
+    setDebugInfo(prev => ({
+      ...prev,
+      syncErrors: []
+    }));
     try {
+      // 获取所有用户（不分页）
       const result = await $w.cloud.callDataSource({
         dataSourceName: 'mc_users',
         methodName: 'wedaGetRecordsV2',
@@ -337,12 +476,19 @@ export function PermissionManagement({
         }
       });
       const allUsers = result.records || [];
+      const totalUsers = allUsers.length;
+
+      // 筛选出已拥有角色的用户
       const usersWithRoles = allUsers.filter(user => hasUserRoles(user));
       const usersWithoutRoles = allUsers.filter(user => !hasUserRoles(user));
+      console.log('开始批量同步，总用户数:', totalUsers);
+      console.log('已拥有角色的用户数:', usersWithRoles.length);
+      console.log('未拥有角色的用户数:', usersWithoutRoles.length);
       setSyncResults(prev => ({
         ...prev,
         total: usersWithRoles.length,
-        skipped: usersWithoutRoles.length
+        // 只统计需要同步的用户
+        skipped: usersWithoutRoles.length // 记录跳过的用户数
       }));
       if (usersWithRoles.length === 0) {
         setSyncStatus('info');
@@ -352,8 +498,12 @@ export function PermissionManagement({
       let successCount = 0;
       let failedCount = 0;
       const details = [];
+      const syncErrors = [];
+
+      // 逐个同步已拥有角色的用户权限
       for (let i = 0; i < usersWithRoles.length; i++) {
         const user = usersWithRoles[i];
+        console.log(`同步用户 ${i + 1}/${usersWithRoles.length}:`, user.name);
         const result = await syncUserPermissions(user);
         details.push({
           userId: user._id,
@@ -365,9 +515,17 @@ export function PermissionManagement({
         });
         if (result.success) {
           successCount++;
+          console.log(`用户 ${user.name} 同步成功`);
         } else {
           failedCount++;
+          syncErrors.push({
+            userName: user.name,
+            error: result.message
+          });
+          console.log(`用户 ${user.name} 同步失败:`, result.message);
         }
+
+        // 更新进度
         const progress = Math.round((i + 1) / usersWithRoles.length * 100);
         setSyncProgress(progress);
         setSyncResults({
@@ -377,10 +535,24 @@ export function PermissionManagement({
           skipped: usersWithoutRoles.length,
           details: details
         });
+        setDebugInfo(prev => ({
+          ...prev,
+          syncErrors: syncErrors
+        }));
+
+        // 短暂延迟，避免请求过快
         await new Promise(resolve => setTimeout(resolve, 100));
       }
+      console.log('批量同步完成:', {
+        success: successCount,
+        failed: failedCount,
+        skipped: usersWithoutRoles.length,
+        errors: syncErrors
+      });
       setSyncStatus('success');
       setSyncMessage(`权限同步完成！成功: ${successCount} 个用户，失败: ${failedCount} 个用户，跳过: ${usersWithoutRoles.length} 个未分配角色的用户`);
+
+      // 重新加载当前页面的用户数据
       await loadUsers(currentPage, searchTerm);
     } catch (error) {
       console.error('批量同步失败:', error);
@@ -397,6 +569,8 @@ export function PermissionManagement({
     if (result.success) {
       setSyncStatus('success');
       setSyncMessage(result.message);
+
+      // 重新加载当前页面的用户数据
       await loadUsers(currentPage, searchTerm);
     } else if (result.skipped) {
       setSyncStatus('info');
@@ -407,46 +581,63 @@ export function PermissionManagement({
     }
   };
 
+  // 初始化加载
+  useEffect(() => {
+    loadRoles();
+    loadUsers();
+  }, []);
+
+  // 打开角色编辑对话框
+  const openRoleDialog = (role = null) => {
+    if (role) {
+      setRoleForm({
+        roleName: role.roleName || '',
+        roleDesc: role.roleDesc || '',
+        permissions: parsePermissions(role.permissions) // 使用修复后的解析方法
+      });
+      setSelectedRole(role);
+    } else {
+      setRoleForm({
+        roleName: '',
+        roleDesc: '',
+        permissions: []
+      });
+      setSelectedRole(null);
+    }
+    setRoleDialogOpen(true);
+  };
+
   // 保存角色
-  const handleSaveRole = async (formData, role) => {
+  const saveRole = async () => {
+    if (!roleForm.roleName.trim()) {
+      toast({
+        title: "请输入角色名称",
+        variant: "destructive"
+      });
+      return;
+    }
     try {
-      if (role) {
-        // 更新角色 - 使用云函数或 wedaUpdateV2
-        if (useCloudFunction) {
-          const result = await $w.cloud.callFunction({
-            name: 'update-user',
+      const permissionsStr = JSON.stringify(roleForm.permissions); // 使用JSON格式存储
+      if (selectedRole) {
+        // 更新角色
+        await $w.cloud.callDataSource({
+          dataSourceName: 'mc_roles',
+          methodName: 'wedaUpdateV2',
+          params: {
             data: {
-              userId: role._id,
-              updateData: {
-                roleName: formData.roleName,
-                roleDesc: formData.roleDesc,
-                permissions: formData.permissions
-              }
-            }
-          });
-          if (!result.result.success) {
-            throw new Error(result.result.errorMessage || '更新失败');
-          }
-        } else {
-          await $w.cloud.callDataSource({
-            dataSourceName: 'mc_roles',
-            methodName: 'wedaUpdateV2',
-            params: {
-              data: {
-                roleName: formData.roleName,
-                roleDesc: formData.roleDesc,
-                permissions: formData.permissions
-              },
-              filter: {
-                where: {
-                  _id: {
-                    $eq: role._id
-                  }
+              roleName: roleForm.roleName,
+              roleDesc: roleForm.roleDesc,
+              permissions: permissionsStr
+            },
+            filter: {
+              where: {
+                _id: {
+                  $eq: selectedRole._id
                 }
               }
             }
-          });
-        }
+          }
+        });
         toast({
           title: "更新成功",
           description: "角色信息已更新"
@@ -458,9 +649,9 @@ export function PermissionManagement({
           methodName: 'wedaCreateV2',
           params: {
             data: {
-              roleName: formData.roleName,
-              roleDesc: formData.roleDesc,
-              permissions: formData.permissions,
+              roleName: roleForm.roleName,
+              roleDesc: roleForm.roleDesc,
+              permissions: permissionsStr,
               status: 'active'
             }
           }
@@ -478,7 +669,6 @@ export function PermissionManagement({
         description: error.message || "保存过程中发生错误",
         variant: "destructive"
       });
-      throw error;
     }
   };
 
@@ -512,41 +702,32 @@ export function PermissionManagement({
     }
   };
 
+  // 打开用户角色分配对话框
+  const openUserRoleDialog = user => {
+    setSelectedUser(user);
+    setUserRoles(user.roles || []);
+    setUserRoleDialogOpen(true);
+  };
+
   // 保存用户角色分配
-  const handleSaveUserRoles = async selectedRoles => {
+  const saveUserRoles = async () => {
     try {
-      // 更新用户角色 - 使用云函数或 wedaUpdateV2
-      if (useCloudFunction) {
-        const result = await $w.cloud.callFunction({
-          name: 'update-user',
+      await $w.cloud.callDataSource({
+        dataSourceName: 'mc_users',
+        methodName: 'wedaUpdateV2',
+        params: {
           data: {
-            userId: selectedUser._id,
-            updateData: {
-              roles: selectedRoles
-            }
-          }
-        });
-        if (!result.result.success) {
-          throw new Error(result.result.errorMessage || '保存失败');
-        }
-      } else {
-        await $w.cloud.callDataSource({
-          dataSourceName: 'mc_users',
-          methodName: 'wedaUpdateV2',
-          params: {
-            data: {
-              roles: selectedRoles
-            },
-            filter: {
-              where: {
-                _id: {
-                  $eq: selectedUser._id
-                }
+            roles: userRoles
+          },
+          filter: {
+            where: {
+              _id: {
+                $eq: selectedUser._id
               }
             }
           }
-        });
-      }
+        }
+      });
       toast({
         title: "保存成功",
         description: "用户角色已更新"
@@ -559,33 +740,84 @@ export function PermissionManagement({
         description: error.message || "保存过程中发生错误",
         variant: "destructive"
       });
-      throw error;
     }
   };
 
-  // 打开角色编辑对话框
-  const openRoleDialog = (role = null) => {
-    setSelectedRole(role);
-    setRoleDialogOpen(true);
+  // 切换权限选择
+  const togglePermission = permissionKey => {
+    setRoleForm(prev => ({
+      ...prev,
+      permissions: prev.permissions.includes(permissionKey) ? prev.permissions.filter(p => p !== permissionKey) : [...prev.permissions, permissionKey]
+    }));
   };
 
-  // 打开用户角色分配对话框
-  const openUserRoleDialog = user => {
-    setSelectedUser(user);
-    setUserRoles(user.roles || []);
-    setUserRoleDialogOpen(true);
+  // 切换用户角色
+  const toggleUserRole = roleId => {
+    setUserRoles(prev => prev.includes(roleId) ? prev.filter(id => id !== roleId) : [...prev, roleId]);
   };
 
-  // 初始化加载
-  useEffect(() => {
-    const initialize = async () => {
-      await Promise.all([loadRoles(), loadUsers(), checkCloudFunction()]);
-    };
-    initialize();
-  }, []);
+  // 检查权限是否被选中
+  const isPermissionSelected = permissionKey => {
+    return roleForm.permissions.includes(permissionKey);
+  };
+
+  // 检查用户是否拥有角色
+  const isUserHasRole = roleId => {
+    return userRoles.includes(roleId);
+  };
+
+  // 获取用户当前权限数量
+  const getUserPermissionCount = user => {
+    if (!user.permissions) return 0;
+    const permissions = parsePermissions(user.permissions);
+    return permissions.length;
+  };
+
+  // 调试信息面板
+  const DebugInfoPanel = () => {
+    if (!debugInfo.syncErrors.length) return null;
+    return <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center">
+          <FileText className="w-5 h-5 mr-2" />
+          同步错误详情
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-2 text-sm">
+          {debugInfo.syncErrors.map((error, index) => <div key={index} className="p-2 bg-red-50 border border-red-200 rounded">
+              <div className="font-medium text-red-800">{error.userName}</div>
+              <div className="text-red-600">{error.error}</div>
+            </div>)}
+        </div>
+      </CardContent>
+    </Card>;
+  };
   return <div className="space-y-6">
       {/* 同步状态显示 */}
-      <SyncStatusAlert status={syncStatus} message={syncMessage} progress={syncProgress} results={syncResults} />
+      {syncStatus && <Alert variant={syncStatus === 'success' ? 'default' : syncStatus === 'syncing' ? 'default' : syncStatus === 'info' ? 'default' : 'destructive'}>
+          {syncStatus === 'success' ? <CheckCircle className="w-4 h-4" /> : syncStatus === 'syncing' ? <RefreshCw className="w-4 h-4 animate-spin" /> : syncStatus === 'info' ? <Filter className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
+          <AlertDescription>
+            {syncMessage}
+            {syncStatus === 'syncing' && <div className="mt-2">
+                <div className="flex justify-between text-sm mb-1">
+                  <span>进度: {syncProgress}%</span>
+                  <span>{syncResults.success + syncResults.failed}/{syncResults.total}</span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div className="bg-blue-600 h-2 rounded-full transition-all duration-300" style={{
+              width: `${syncProgress}%`
+            }}></div>
+                </div>
+              </div>}
+            {syncStatus === 'success' && syncResults.details.length > 0 && <div className="mt-2 text-sm">
+                <div>成功: {syncResults.success} 失败: {syncResults.failed} 跳过: {syncResults.skipped}</div>
+                {syncResults.failed > 0 && <div className="text-orange-600 mt-1">
+                    查看下方错误详情了解失败原因
+                  </div>}
+              </div>}
+          </AlertDescription>
+        </Alert>}
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-2">
@@ -614,30 +846,30 @@ export function PermissionManagement({
                 {roles.map(role => {
                 const permissions = parsePermissions(role.permissions);
                 return <div key={role._id} className="flex items-center justify-between p-4 border rounded-lg">
-                      <div className="flex-1">
-                        <div className="flex items-center space-x-3">
-                          <Shield className="w-5 h-5 text-blue-600" />
-                          <div>
-                            <h3 className="font-semibold">{role.roleName}</h3>
-                            <p className="text-sm text-gray-600">{role.roleDesc}</p>
-                            <div className="flex flex-wrap gap-1 mt-2">
-                              {permissions.map(perm => <Badge key={perm} variant="secondary" className="text-xs">
-                                  {perm}
-                                </Badge>)}
-                              {permissions.length === 0 && <span className="text-xs text-gray-500">暂无权限</span>}
-                            </div>
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-3">
+                        <Shield className="w-5 h-5 text-blue-600" />
+                        <div>
+                          <h3 className="font-semibold">{role.roleName}</h3>
+                          <p className="text-sm text-gray-600">{role.roleDesc}</p>
+                          <div className="flex flex-wrap gap-1 mt-2">
+                            {permissions.map(perm => <Badge key={perm} variant="secondary" className="text-xs">
+                                {perm}
+                              </Badge>)}
+                            {permissions.length === 0 && <span className="text-xs text-gray-500">暂无权限</span>}
                           </div>
                         </div>
                       </div>
-                      <div className="flex space-x-2">
-                        <Button variant="outline" size="sm" onClick={() => openRoleDialog(role)}>
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button variant="destructive" size="sm" onClick={() => deleteRole(role)}>
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>;
+                    </div>
+                    <div className="flex space-x-2">
+                      <Button variant="outline" size="sm" onClick={() => openRoleDialog(role)}>
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                      <Button variant="destructive" size="sm" onClick={() => deleteRole(role)}>
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>;
               })}
                 {roles.length === 0 && <div className="text-center py-8 text-gray-500">
                     <Shield className="w-12 h-12 mx-auto mb-4 text-gray-300" />
@@ -668,7 +900,7 @@ export function PermissionManagement({
             </CardHeader>
             <CardContent>
               <div className="space-y-4 mb-6">
-                {users.map(user => <div key={user._id} className="flex items-center justify-between p-4 border rounded-lg">
+                {filteredUsers.map(user => <div key={user._id} className="flex items-center justify-between p-4 border rounded-lg">
                     <div className="flex-1">
                       <div className="flex items-center space-x-3">
                         <User className="w-5 h-5 text-gray-600" />
@@ -704,7 +936,7 @@ export function PermissionManagement({
                         <RefreshCw className={`w-4 h-4 mr-1 ${syncStatus === 'syncing' ? 'animate-spin' : ''}`} />
                         同步
                       </Button>
-                      <Button variant="outline" size="sm" onClick={() => openUserRoleDialog(user)} className="flex items-center">
+                      <Button variant="outline" size="sm" onClick={() => openUserRoleDialog(user)}>
                         <Edit className="w-4 h-4 mr-1" />
                         分配角色
                       </Button>
@@ -722,19 +954,98 @@ export function PermissionManagement({
                 显示第 {(currentPage - 1) * pageSize + 1} - {Math.min(currentPage * pageSize, totalUsers)} 条，共 {totalUsers} 条记录
               </div>
               
-              {users.length === 0 && <div className="text-center py-8 text-gray-500">
+              {filteredUsers.length === 0 && <div className="text-center py-8 text-gray-500">
                   <User className="w-12 h-12 mx-auto mb-4 text-gray-300" />
                   <p>{searchTerm ? '没有找到匹配的用户' : '暂无用户数据'}</p>
                 </div>}
             </CardContent>
           </Card>
+          
+          {/* 调试信息面板 */}
+          {debugInfo.syncErrors.length > 0 && <DebugInfoPanel />}
         </TabsContent>
       </Tabs>
 
       {/* 角色编辑对话框 */}
-      <RoleFormDialog open={roleDialogOpen} onOpenChange={setRoleDialogOpen} role={selectedRole} onSave={handleSaveRole} $w={$w} />
+      <Dialog open={roleDialogOpen} onOpenChange={setRoleDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{selectedRole ? '编辑角色' : '新建角色'}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 gap-4">
+              <div>
+                <Label>角色名称</Label>
+                <Input value={roleForm.roleName} onChange={e => setRoleForm({
+                ...roleForm,
+                roleName: e.target.value
+              })} placeholder="请输入角色名称" />
+              </div>
+              <div>
+                <Label>角色描述</Label>
+                <Textarea value={roleForm.roleDesc} onChange={e => setRoleForm({
+                ...roleForm,
+                roleDesc: e.target.value
+              })} placeholder="请输入角色描述" />
+              </div>
+            </div>
+            
+            <div>
+              <Label className="mb-4 block">权限分配</Label>
+              <div className="space-y-4">
+                {Object.entries(PERMISSION_GROUPS).map(([groupKey, group]) => <Card key={groupKey}>
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-sm">{group.name}</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                        {group.permissions.map(permKey => <label key={permKey} className="flex items-center space-x-2 p-2 rounded hover:bg-gray-50">
+                            <input type="checkbox" checked={isPermissionSelected(PERMISSION_LIST[permKey])} onChange={() => togglePermission(PERMISSION_LIST[permKey])} className="rounded border-gray-300" />
+                            <span className="text-sm">{permKey.replace(/_/g, ' ').toLowerCase()}</span>
+                          </label>)}
+                      </div>
+                    </CardContent>
+                  </Card>)}
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRoleDialogOpen(false)}>
+              取消
+            </Button>
+            <Button onClick={saveRole}>
+              保存
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* 用户角色分配对话框 */}
-      <UserRoleDialog open={userRoleDialogOpen} onOpenChange={setUserRoleDialogOpen} user={selectedUser} roles={roles} userRoles={userRoles} onSave={handleSaveUserRoles} $w={$w} />
+      <Dialog open={userRoleDialogOpen} onOpenChange={setUserRoleDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>分配角色 - {selectedUser?.name}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>选择角色</Label>
+              <div className="space-y-2 mt-2">
+                {roles.map(role => <label key={role._id} className="flex items-center space-x-2 p-2 rounded hover:bg-gray-50">
+                    <input type="checkbox" checked={isUserHasRole(role._id)} onChange={() => toggleUserRole(role._id)} className="rounded border-gray-300" />
+                    <span>{role.roleName}</span>
+                  </label>)}
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setUserRoleDialogOpen(false)}>
+              取消
+            </Button>
+            <Button onClick={saveUserRoles}>
+              保存
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>;
 }

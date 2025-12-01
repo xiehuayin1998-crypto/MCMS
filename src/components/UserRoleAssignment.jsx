@@ -7,8 +7,7 @@ import { Users, Shield, RefreshCw, CheckCircle, AlertCircle, Database } from 'lu
 
 export function UserRoleAssignment({
   userId,
-  onRoleAssigned,
-  $w
+  onRoleAssigned
 }) {
   const [roles, setRoles] = useState([]);
   const [selectedRole, setSelectedRole] = useState('');
@@ -19,33 +18,9 @@ export function UserRoleAssignment({
   const [syncStatus, setSyncStatus] = useState(null); // null, 'success', 'error'
   const [syncMessage, setSyncMessage] = useState('');
   const [debugInfo, setDebugInfo] = useState({});
-  const [useCloudFunction, setUseCloudFunction] = useState(false);
   const {
     toast
   } = useToast();
-
-  // 检查云函数是否存在
-  const checkCloudFunction = async () => {
-    try {
-      const result = await $w.cloud.callFunction({
-        name: 'update-user',
-        data: {
-          test: true
-        }
-      });
-      setUseCloudFunction(true);
-      return true;
-    } catch (error) {
-      if (error.code === 'FUNCTION_NOT_FOUND') {
-        console.warn('update-user 云函数未找到，将使用 wedaUpdateV2');
-        setUseCloudFunction(false);
-        return false;
-      }
-      console.warn('云函数调用失败，将使用 wedaUpdateV2:', error);
-      setUseCloudFunction(false);
-      return false;
-    }
-  };
 
   // 加载角色列表
   const loadRoles = async () => {
@@ -58,7 +33,7 @@ export function UserRoleAssignment({
             $master: true
           },
           orderBy: [{
-            roleName: 'asc'
+            roleName: 'asc' // 修正字段名：roleName 而不是 role_name
           }]
         }
       });
@@ -122,7 +97,7 @@ export function UserRoleAssignment({
   // 获取角色名称
   const getRoleName = roleId => {
     const role = roles.find(r => r._id === roleId);
-    return role ? role.roleName : '未知角色';
+    return role ? role.roleName : '未知角色'; // 修正字段名：roleName 而不是 role_name
   };
 
   // 获取角色等级
@@ -182,47 +157,24 @@ export function UserRoleAssignment({
         return false;
       }
 
-      // 更新用户权限 - 使用云函数或 wedaUpdateV2
-      let updateResult;
-      if (useCloudFunction) {
-        // 使用 update-user 云函数
-        const result = await $w.cloud.callFunction({
-          name: 'update-user',
+      // 更新用户权限
+      const updateResult = await $w.cloud.callDataSource({
+        dataSourceName: 'mc_users',
+        methodName: 'wedaUpdateV2',
+        params: {
           data: {
-            userId: userId,
-            updateData: {
-              permissions: JSON.stringify(rolePermissions),
-              updatedAt: new Date().getTime()
-            }
-          }
-        });
-        if (result.result.success) {
-          updateResult = {
-            count: 1
-          };
-        } else {
-          throw new Error(result.result.errorMessage || '权限更新失败');
-        }
-      } else {
-        // 使用 wedaUpdateV2 作为备选方案
-        updateResult = await $w.cloud.callDataSource({
-          dataSourceName: 'mc_users',
-          methodName: 'wedaUpdateV2',
-          params: {
-            data: {
-              permissions: JSON.stringify(rolePermissions),
-              updatedAt: new Date().getTime()
-            },
-            filter: {
-              where: {
-                _id: {
-                  $eq: userId
-                }
+            permissions: JSON.stringify(rolePermissions),
+            updatedAt: new Date().getTime()
+          },
+          filter: {
+            where: {
+              _id: {
+                $eq: userId
               }
             }
           }
-        });
-      }
+        }
+      });
       console.log('权限更新结果:', updateResult);
       if (updateResult.count > 0) {
         setSyncStatus('success');
@@ -276,49 +228,25 @@ export function UserRoleAssignment({
         roleLevel
       });
 
-      // 先分配角色 - 使用云函数或 wedaUpdateV2
-      let roleResult;
-      if (useCloudFunction) {
-        // 使用 update-user 云函数
-        const result = await $w.cloud.callFunction({
-          name: 'update-user',
+      // 先分配角色
+      const roleResult = await $w.cloud.callDataSource({
+        dataSourceName: 'mc_users',
+        methodName: 'wedaUpdateV2',
+        params: {
           data: {
-            userId: userId,
-            updateData: {
-              roles: [selectedRole],
-              roles_level: [roleLevel],
-              updatedAt: new Date().getTime()
-            }
-          }
-        });
-        if (result.result.success) {
-          roleResult = {
-            count: 1
-          };
-        } else {
-          throw new Error(result.result.errorMessage || '角色分配失败');
-        }
-      } else {
-        // 使用 wedaUpdateV2 作为备选方案
-        roleResult = await $w.cloud.callDataSource({
-          dataSourceName: 'mc_users',
-          methodName: 'wedaUpdateV2',
-          params: {
-            data: {
-              roles: [selectedRole],
-              roles_level: [roleLevel],
-              updatedAt: new Date().getTime()
-            },
-            filter: {
-              where: {
-                _id: {
-                  $eq: userId
-                }
+            roles: [selectedRole],
+            roles_level: [roleLevel],
+            updatedAt: new Date().getTime()
+          },
+          filter: {
+            where: {
+              _id: {
+                $eq: userId
               }
             }
           }
-        });
-      }
+        }
+      });
       console.log('角色分配结果:', roleResult);
       if (roleResult.count === 0) {
         toast({
@@ -381,50 +309,26 @@ export function UserRoleAssignment({
   // 移除角色
   const handleRemoveRole = async roleId => {
     try {
-      let result;
-      if (useCloudFunction) {
-        // 使用 update-user 云函数
-        const cloudResult = await $w.cloud.callFunction({
-          name: 'update-user',
+      const result = await $w.cloud.callDataSource({
+        dataSourceName: 'mc_users',
+        methodName: 'wedaUpdateV2',
+        params: {
           data: {
-            userId: userId,
-            updateData: {
-              roles: [],
-              roles_level: [],
-              permissions: JSON.stringify([]),
-              updatedAt: new Date().getTime()
-            }
-          }
-        });
-        if (cloudResult.result.success) {
-          result = {
-            count: 1
-          };
-        } else {
-          throw new Error(cloudResult.result.errorMessage || '角色移除失败');
-        }
-      } else {
-        // 使用 wedaUpdateV2 作为备选方案
-        result = await $w.cloud.callDataSource({
-          dataSourceName: 'mc_users',
-          methodName: 'wedaUpdateV2',
-          params: {
-            data: {
-              roles: [],
-              roles_level: [],
-              permissions: JSON.stringify([]),
-              updatedAt: new Date().getTime()
-            },
-            filter: {
-              where: {
-                _id: {
-                  $eq: userId
-                }
+            roles: [],
+            roles_level: [],
+            permissions: JSON.stringify([]),
+            // 清空权限
+            updatedAt: new Date().getTime()
+          },
+          filter: {
+            where: {
+              _id: {
+                $eq: userId
               }
             }
           }
-        });
-      }
+        }
+      });
       console.log('角色移除结果:', result);
       if (result.count > 0) {
         setSyncStatus('success');
@@ -466,15 +370,12 @@ export function UserRoleAssignment({
           <div>用户角色: {JSON.stringify(debugInfo.userRoles)}</div>
           <div>用户权限: {debugInfo.userPermissions}</div>
           {debugInfo.syncError && <div className="text-red-600">同步错误: {debugInfo.syncError}</div>}
-          <div>使用云函数: {useCloudFunction ? '是' : '否'}</div>
         </div>
       </div>;
   };
   useEffect(() => {
-    const initialize = async () => {
-      await Promise.all([loadRoles(), loadUserRoles(), checkCloudFunction()]);
-    };
-    initialize();
+    loadRoles();
+    loadUserRoles();
   }, [userId]);
   const currentPermissions = getCurrentRolePermissions();
   return <Card>

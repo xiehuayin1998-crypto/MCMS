@@ -19,33 +19,9 @@ export function MeetingRoomApprovalList({
   const [deletingBooking, setDeletingBooking] = React.useState(null);
   const [viewingBooking, setViewingBooking] = React.useState(null);
   const [rooms, setRooms] = React.useState({});
-  const [useCloudFunction, setUseCloudFunction] = React.useState(false);
   const {
     toast
   } = useToast();
-
-  // 检查云函数是否存在
-  const checkCloudFunction = async () => {
-    try {
-      const result = await $w.cloud.callFunction({
-        name: 'update-user',
-        data: {
-          test: true
-        }
-      });
-      setUseCloudFunction(true);
-      return true;
-    } catch (error) {
-      if (error.code === 'FUNCTION_NOT_FOUND') {
-        console.warn('update-user 云函数未找到，将使用 wedaUpdateV2');
-        setUseCloudFunction(false);
-        return false;
-      }
-      console.warn('云函数调用失败，将使用 wedaUpdateV2:', error);
-      setUseCloudFunction(false);
-      return false;
-    }
-  };
 
   // 加载会议室信息
   const loadRooms = async () => {
@@ -110,47 +86,23 @@ export function MeetingRoomApprovalList({
   // 同意申请
   const handleApprove = async booking => {
     try {
-      let result;
-      if (useCloudFunction) {
-        // 使用 update-user 云函数
-        const cloudResult = await $w.cloud.callFunction({
-          name: 'update-user',
+      const result = await $w.cloud.callDataSource({
+        dataSourceName: 'mc_meeting_booking',
+        methodName: 'wedaUpdateV2',
+        params: {
           data: {
-            userId: booking._id,
-            // 注意：这里使用申请ID作为userId
-            updateData: {
-              status: '已通过',
-              updatedAt: Date.now()
-            }
-          }
-        });
-        if (cloudResult.result.success) {
-          result = {
-            count: 1
-          };
-        } else {
-          throw new Error(cloudResult.result.errorMessage || '审批失败');
-        }
-      } else {
-        // 使用 wedaUpdateV2 作为备选方案
-        result = await $w.cloud.callDataSource({
-          dataSourceName: 'mc_meeting_booking',
-          methodName: 'wedaUpdateV2',
-          params: {
-            data: {
-              status: '已通过',
-              updatedAt: Date.now()
-            },
-            filter: {
-              where: {
-                _id: {
-                  $eq: booking._id
-                }
+            status: '已通过',
+            updatedAt: Date.now()
+          },
+          filter: {
+            where: {
+              _id: {
+                $eq: booking._id
               }
             }
           }
-        });
-      }
+        }
+      });
       if (result.count > 0) {
         toast({
           title: "审批成功",
@@ -172,47 +124,24 @@ export function MeetingRoomApprovalList({
   // 拒绝申请
   const handleReject = async (booking, reason) => {
     try {
-      // 更新申请状态为已拒绝 - 使用云函数或 wedaUpdateV2
-      let updateResult;
-      if (useCloudFunction) {
-        // 使用 update-user 云函数
-        const cloudResult = await $w.cloud.callFunction({
-          name: 'update-user',
+      // 更新申请状态为已拒绝
+      const updateResult = await $w.cloud.callDataSource({
+        dataSourceName: 'mc_meeting_booking',
+        methodName: 'wedaUpdateV2',
+        params: {
           data: {
-            userId: booking._id,
-            updateData: {
-              status: '已拒绝',
-              updatedAt: Date.now()
-            }
-          }
-        });
-        if (cloudResult.result.success) {
-          updateResult = {
-            count: 1
-          };
-        } else {
-          throw new Error(cloudResult.result.errorMessage || '拒绝失败');
-        }
-      } else {
-        // 使用 wedaUpdateV2 作为备选方案
-        updateResult = await $w.cloud.callDataSource({
-          dataSourceName: 'mc_meeting_booking',
-          methodName: 'wedaUpdateV2',
-          params: {
-            data: {
-              status: '已拒绝',
-              updatedAt: Date.now()
-            },
-            filter: {
-              where: {
-                _id: {
-                  $eq: booking._id
-                }
+            status: '已拒绝',
+            updatedAt: Date.now()
+          },
+          filter: {
+            where: {
+              _id: {
+                $eq: booking._id
               }
             }
           }
-        });
-      }
+        }
+      });
       if (updateResult.count > 0) {
         // 保存拒绝原因到 mc_meeting_refused_information
         await $w.cloud.callDataSource({
@@ -308,10 +237,8 @@ export function MeetingRoomApprovalList({
 
   // 初始化加载
   React.useEffect(() => {
-    const initialize = async () => {
-      await Promise.all([loadRooms(), loadPendingBookings(), checkCloudFunction()]);
-    };
-    initialize();
+    loadRooms();
+    loadPendingBookings();
   }, []);
   if (isLoading) {
     return <div className="flex items-center justify-center h-64">
