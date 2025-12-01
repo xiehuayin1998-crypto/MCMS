@@ -30,23 +30,51 @@ export default function EmployeeManagement(props) {
   const [isReadOnlySearch, setIsReadOnlySearch] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
+  const [currentUserInfo, setCurrentUserInfo] = useState(null); // 存储从mc_users获取的用户信息
   const {
     toast
   } = useToast();
 
-  // 修复：使用useCallback避免每次渲染都创建新函数
-  const getCurrentUser = useCallback(() => {
+  // 获取当前登录用户信息 - 从mc_users数据源获取完整信息
+  const getCurrentUserInfo = useCallback(async () => {
     try {
-      if ($w.auth.currentUser) {
+      if (!$w.auth.currentUser) {
+        return null;
+      }
+
+      // 根据当前登录用户的userId从mc_users数据源查询完整信息
+      const result = await $w.cloud.callDataSource({
+        dataSourceName: 'mc_users',
+        methodName: 'wedaGetRecordsV2',
+        params: {
+          select: {
+            $master: true
+          },
+          filter: {
+            where: {
+              _id: {
+                $eq: $w.auth.currentUser.userId
+              }
+            }
+          },
+          pageSize: 1
+        }
+      });
+      if (result.records && result.records.length > 0) {
+        const userData = result.records[0];
         const userInfo = {
-          userId: $w.auth.currentUser.userId,
-          name: $w.auth.currentUser.name,
-          nickName: $w.auth.currentUser.nickName,
-          isAdmin: $w.auth.currentUser.type === 'admin' || $w.auth.currentUser.isAdmin
+          userId: userData._id,
+          name: userData.name,
+          username: userData.username,
+          isAdmin: userData.isAdmin || false,
+          // 使用mc_users中的isAdmin字段
+          department: userData.department,
+          employee_number: userData.employee_number
         };
+
         // 只有在用户信息发生变化时才更新状态
-        if (JSON.stringify(userInfo) !== JSON.stringify(currentUser)) {
-          setCurrentUser(userInfo);
+        if (JSON.stringify(userInfo) !== JSON.stringify(currentUserInfo)) {
+          setCurrentUserInfo(userInfo);
         }
         return userInfo;
       }
@@ -55,7 +83,7 @@ export default function EmployeeManagement(props) {
       console.error('获取当前用户信息失败:', error);
       return null;
     }
-  }, [$w.auth.currentUser, currentUser]);
+  }, [$w.auth.currentUser, currentUserInfo]);
 
   // 检查URL参数，处理自动搜索
   useEffect(() => {
@@ -73,9 +101,9 @@ export default function EmployeeManagement(props) {
         description: `已自动搜索：${params.autoSearch}`
       });
     } else {
-      getCurrentUser();
+      getCurrentUserInfo();
     }
-  }, [$w.page.dataset.params, getCurrentUser]);
+  }, [$w.page.dataset.params, getCurrentUserInfo]);
 
   // 加载用户列表
   const loadEmployees = async (page = 1) => {
@@ -187,9 +215,9 @@ export default function EmployeeManagement(props) {
   };
 
   // 处理只读模式下的刷新按钮点击
-  const handleRefresh = () => {
+  const handleRefresh = async () => {
     if (!isReadOnlySearch) return;
-    const user = getCurrentUser();
+    const user = await getCurrentUserInfo();
     if (!user || !user.name && !user.username) {
       toast({
         title: "刷新失败",
@@ -226,7 +254,7 @@ export default function EmployeeManagement(props) {
   // 处理删除 - 添加权限检查
   const handleDelete = async employee => {
     try {
-      const currentUser = getCurrentUser();
+      const currentUser = await getCurrentUserInfo();
       if (!currentUser) {
         toast({
           title: "权限不足",
@@ -235,6 +263,7 @@ export default function EmployeeManagement(props) {
         });
         return;
       }
+      // 使用mc_users中的isAdmin字段判断权限
       if (!currentUser.isAdmin && currentUser.userId !== employee._id) {
         toast({
           title: "权限不足",
@@ -287,11 +316,10 @@ export default function EmployeeManagement(props) {
     loadEmployees(currentPage);
   };
 
-  // 检查用户权限
+  // 检查用户权限 - 使用mc_users中的isAdmin字段
   const canManageUsers = useCallback(() => {
-    const user = getCurrentUser();
-    return user && user.isAdmin;
-  }, [getCurrentUser]);
+    return currentUserInfo && currentUserInfo.isAdmin;
+  }, [currentUserInfo]);
   return <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
       <div className="max-w-7xl mx-auto">
         {/* 页面头部 */}
@@ -367,6 +395,9 @@ export default function EmployeeManagement(props) {
                   <p className="text-3xl font-bold">
                     {canManageUsers() ? '管理员' : '普通用户'}
                   </p>
+                  {currentUserInfo && <p className="text-purple-200 text-sm mt-1">
+                      {currentUserInfo.name} ({currentUserInfo.employee_number || '无工号'})
+                    </p>}
                 </div>
                 <Shield className="w-12 h-12 opacity-20" />
               </div>
@@ -382,6 +413,10 @@ export default function EmployeeManagement(props) {
               {isReadOnlySearch && <span className="text-sm text-blue-600 font-normal flex items-center">
                   <User className="w-4 h-4 mr-1" />
                   当前为只读查看模式
+                </span>}
+              {!canManageUsers() && <span className="text-sm text-orange-600 font-normal flex items-center">
+                  <Shield className="w-4 h-4 mr-1" />
+                  普通用户权限，只能查看和修改自己的信息
                 </span>}
             </CardTitle>
           </CardHeader>
@@ -431,7 +466,7 @@ export default function EmployeeManagement(props) {
         </Card>
 
         {/* 对话框组件 */}
-        <EmployeeEditDialog open={editDialogOpen} onOpenChange={setEditDialogOpen} employee={selectedEmployee} onSave={handleSave} $w={$w} currentUser={currentUser} />
+        <EmployeeEditDialog open={editDialogOpen} onOpenChange={setEditDialogOpen} employee={selectedEmployee} onSave={handleSave} $w={$w} currentUser={currentUserInfo} />
         
         <UserJsonImportExport open={importExportOpen} onOpenChange={setImportExportOpen} onComplete={handleImportExportComplete} $w={$w} />
       </div>
