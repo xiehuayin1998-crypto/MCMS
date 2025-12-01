@@ -303,6 +303,16 @@ export default function EmployeeManagement(props) {
     }
   };
 
+  // 处理导入导出完成 - 新增缺失的函数
+  const handleImportExportComplete = () => {
+    setImportExportOpen(false);
+    loadEmployees(currentPage);
+    toast({
+      title: "批量操作完成",
+      description: "用户数据导入/导出操作已完成"
+    });
+  };
+
   // 处理导航菜单点击
   const handleNavigationClick = (type, item) => {
     if (type === 'business') {
