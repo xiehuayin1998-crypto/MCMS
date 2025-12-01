@@ -5,23 +5,43 @@ import { Button, Avatar, AvatarFallback, AvatarImage, DropdownMenu, DropdownMenu
 // @ts-ignore;
 import { Home, User, LogOut, Settings, LayoutDashboard } from 'lucide-react';
 
-import { useAuth } from './AuthProvider';
 export function UserHeader({
   $w,
   showHomeButton = true
 }) {
-  const {
-    user,
-    isAuthenticated,
-    logout,
-    isLoading
-  } = useAuth();
-  const handleLogout = async () => {
+  const [currentUser, setCurrentUser] = React.useState(null);
+  const [isLoading, setIsLoading] = React.useState(true);
+
+  // 加载当前用户信息
+  React.useEffect(() => {
+    loadCurrentUser();
+  }, []);
+  const loadCurrentUser = async () => {
     try {
-      await logout();
+      const storedUser = localStorage.getItem('currentUser');
+      if (storedUser) {
+        const userInfo = JSON.parse(storedUser);
+        setCurrentUser(userInfo);
+      } else if ($w.auth.currentUser) {
+        // 如果没有存储的用户信息，使用当前登录用户
+        setCurrentUser({
+          name: $w.auth.currentUser.name,
+          username: $w.auth.currentUser.name,
+          avatarUrl: $w.auth.currentUser.avatarUrl
+        });
+      }
     } catch (error) {
-      console.error('退出登录失败:', error);
+      console.error('加载用户信息失败:', error);
+    } finally {
+      setIsLoading(false);
     }
+  };
+  const handleLogout = () => {
+    localStorage.removeItem('currentUser');
+    $w.utils.navigateTo({
+      pageId: 'login',
+      params: {}
+    });
   };
   const handleNavigateTo = pageId => {
     $w.utils.navigateTo({
@@ -29,26 +49,6 @@ export function UserHeader({
       params: {}
     });
   };
-  if (isLoading) {
-    return <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              {showHomeButton && <Button variant="ghost" size="sm" className="mr-4" disabled>
-                  <Home className="w-4 h-4 mr-2" />
-                  返回首页
-                </Button>}
-              <h1 className="text-xl font-semibold text-gray-900">
-                墨西哥轨道交通装备有限公司
-              </h1>
-            </div>
-            <div className="flex items-center">
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-            </div>
-          </div>
-        </div>
-      </header>;
-  }
   return <header className="bg-white shadow-sm border-b">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
@@ -65,13 +65,13 @@ export function UserHeader({
 
           {/* 右侧用户信息 */}
           <div className="flex items-center space-x-4">
-            {isAuthenticated && user ? <DropdownMenu>
+            {currentUser ? <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                     <Avatar className="h-8 w-8">
-                      <AvatarImage src={user.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name || user.username)}&background=3b82f6&color=fff`} alt={user.name || user.username} />
+                      <AvatarImage src={currentUser.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser.name || currentUser.username)}&background=3b82f6&color=fff`} alt={currentUser.name || currentUser.username} />
                       <AvatarFallback>
-                        {(user.name || user.username || '').charAt(0).toUpperCase()}
+                        {(currentUser.name || currentUser.username || '').charAt(0).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
                   </Button>
@@ -79,12 +79,9 @@ export function UserHeader({
                 <DropdownMenuContent className="w-56" align="end" forceMount>
                   <div className="flex items-center justify-start gap-2 p-2">
                     <div className="flex flex-col space-y-1 leading-none">
-                      {user.name && <p className="font-medium">{user.name}</p>}
+                      {currentUser.name && <p className="font-medium">{currentUser.name}</p>}
                       <p className="w-[200px] truncate text-sm text-muted-foreground">
-                        {user.username || user.name}
-                        {user.isAdmin && <span className="ml-2 px-1 py-0.5 text-xs bg-blue-100 text-blue-800 rounded">
-                            管理员
-                          </span>}
+                        {currentUser.username || currentUser.name}
                       </p>
                     </div>
                   </div>
@@ -95,6 +92,10 @@ export function UserHeader({
                     <LayoutDashboard className="mr-2 h-4 w-4" />
                     <span>个人工作台</span>
                   </DropdownMenuItem>
+                  {/* <DropdownMenuItem onClick={() => handleNavigateTo('settings')}>
+                    <Settings className="mr-2 h-4 w-4" />
+                    <span>设置</span>
+                  </DropdownMenuItem> */}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleLogout}>
                     <LogOut className="mr-2 h-4 w-4" />

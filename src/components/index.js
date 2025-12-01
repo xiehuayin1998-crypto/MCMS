@@ -33,4 +33,3 @@ export * from './.datasources/user_role-assignmentUserRoleAssignment.jsx';
 export * from './UserImportExport.jsx';
 export * from './UserBatchImportExport.jsx';
 export * from './UserJsonImportExport.jsx';
-export * from './AuthProvider.jsx';

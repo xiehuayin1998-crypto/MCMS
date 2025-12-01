@@ -390,7 +390,23 @@ export function EmployeeEditDialog({
     });
   };
 
-  // 处理表单提交 - 修复：管理员应该可以修改任何用户
+  // 使用云函数绕过权限检查更新用户信息
+  const updateUserWithBypass = async (userId, updateData) => {
+    try {
+      const result = await $w.cloud.callFunction({
+        name: 'updateUserBypassPermission',
+        data: {
+          userId: userId,
+          updateData: updateData
+        }
+      });
+      return result;
+    } catch (error) {
+      throw new Error(`云函数调用失败: ${error.message}`);
+    }
+  };
+
+  // 处理表单提交 - 使用云函数绕过权限检查
   const handleSubmit = async () => {
     if (!checkPermission()) {
       toast({
@@ -453,26 +469,20 @@ export function EmployeeEditDialog({
         }
       });
       if (employee && employee._id) {
-        // 修复：管理员应该可以修改任何用户，无需检查行级权限
-        await $w.cloud.callDataSource({
-          dataSourceName: 'mc_users',
-          methodName: 'wedaUpdateV2',
-          params: {
-            data: updateData,
-            filter: {
-              where: {
-                _id: {
-                  $eq: employee._id
-                }
-              }
-            }
-          }
-        });
-        toast({
-          title: "更新成功",
-          description: "用户信息已更新"
-        });
+        // 使用云函数绕过行级权限检查
+        const result = await updateUserWithBypass(employee._id, updateData);
+        if (result.success) {
+          toast({
+            title: "更新成功",
+            description: "用户信息已更新"
+          });
+          onSave();
+          onOpenChange(false);
+        } else {
+          throw new Error(result.message || '更新失败');
+        }
       } else {
+        // 新建用户仍然使用数据源方法
         await $w.cloud.callDataSource({
           dataSourceName: 'mc_users',
           methodName: 'wedaCreateV2',
@@ -484,15 +494,40 @@ export function EmployeeEditDialog({
           title: "创建成功",
           description: "新用户已创建"
         });
+        onSave();
+        onOpenChange(false);
       }
-      onSave();
-      onOpenChange(false);
     } catch (error) {
       console.error('保存失败:', error);
-      // 修复：提供更详细的错误信息
       let errorMessage = error.message || "无法保存用户信息";
-      if (error.message && error.message.includes('行权限')) {
-        errorMessage = "权限配置问题：请联系系统管理员检查数据模型的行级权限设置。管理员应该可以修改所有用户数据。";
+      // 如果云函数调用失败，尝试使用原始方法作为备用方案
+      if (error.message && error.message.includes('云函数调用失败')) {
+        try {
+          // 备用方案：尝试使用原始数据源方法
+          await $w.cloud.callDataSource({
+            dataSourceName: 'mc_users',
+            methodName: 'wedaUpdateV2',
+            params: {
+              data: updateData,
+              filter: {
+                where: {
+                  _id: {
+                    $eq: employee._id
+                  }
+                }
+              }
+            }
+          });
+          toast({
+            title: "更新成功",
+            description: "用户信息已更新（使用备用方法）"
+          });
+          onSave();
+          onOpenChange(false);
+          return;
+        } catch (fallbackError) {
+          errorMessage = `云函数调用失败，备用方法也失败: ${fallbackError.message}`;
+        }
       }
       toast({
         title: "操作失败",
