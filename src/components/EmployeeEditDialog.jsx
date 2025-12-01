@@ -96,7 +96,7 @@ export function EmployeeEditDialog({
   const checkCloudFunction = async () => {
     try {
       const result = await $w.cloud.callFunction({
-        name: 'update-user-bypass',
+        name: 'admin-update-user',
         data: {
           test: true
         }
@@ -105,7 +105,7 @@ export function EmployeeEditDialog({
       return true;
     } catch (error) {
       if (error.code === 'FUNCTION_NOT_FOUND') {
-        console.warn('update-user-bypass 云函数未找到，将使用 wedaUpdateV2');
+        console.warn('admin-update-user 云函数未找到，将使用 wedaUpdateV2');
         setUseCloudFunction(false);
         return false;
       }
@@ -405,7 +405,7 @@ export function EmployeeEditDialog({
     });
   };
 
-  // 处理表单提交 - 使用 update-user-bypass 云函数绕过权限限制
+  // 处理表单提交 - 使用 admin-update-user 云函数绕过权限限制
   const handleSubmit = async () => {
     if (!validateForm()) {
       toast({
@@ -470,9 +470,9 @@ export function EmployeeEditDialog({
       console.log('提交的数据:', updateData); // 调试日志
 
       if (employee && employee._id) {
-        // 更新现有用户 - 使用 update-user-bypass 云函数绕过权限限制
+        // 更新现有用户 - 使用 admin-update-user 云函数绕过权限限制
         const result = await $w.cloud.callFunction({
-          name: 'update-user-bypass',
+          name: 'admin-update-user',
           data: {
             userId: employee._id,
             updateData: updateData
