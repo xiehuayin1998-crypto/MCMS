@@ -91,7 +91,7 @@ export function EmployeeEditDialog({
     }
   };
 
-  // 加载角色列表
+  // 加载角色列表 - 使用数据源方法
   const loadRoles = async () => {
     try {
       setRolesLoading(true);
@@ -119,7 +119,7 @@ export function EmployeeEditDialog({
     }
   };
 
-  // 加载部门列表
+  // 加载部门列表 - 使用数据源方法
   const loadDepartments = async () => {
     try {
       setDepartmentsLoading(true);
@@ -380,7 +380,7 @@ export function EmployeeEditDialog({
     });
   };
 
-  // 处理表单提交
+  // 处理表单提交 - 使用数据源方法
   const handleSubmit = async () => {
     if (!validateForm()) {
       toast({
@@ -445,7 +445,7 @@ export function EmployeeEditDialog({
       console.log('提交的数据:', updateData); // 调试日志
 
       if (employee && employee._id) {
-        // 更新现有用户
+        // 更新现有用户 - 使用数据源方法
         await $w.cloud.callDataSource({
           dataSourceName: 'mc_users',
           methodName: 'wedaUpdateV2',
@@ -465,7 +465,7 @@ export function EmployeeEditDialog({
           description: "用户信息已更新"
         });
       } else {
-        // 创建新用户
+        // 创建新用户 - 使用数据源方法
         await $w.cloud.callDataSource({
           dataSourceName: 'mc_users',
           methodName: 'wedaCreateV2',
