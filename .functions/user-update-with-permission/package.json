@@ -1,0 +1,11 @@
+
+    {
+      "name": "user-update-with-permission",
+      "version": "1.0.0",
+      "description": "基于用户权限的用户数据更新云函数，支持管理员修改所有用户数据，普通用户仅能修改自己的数据",
+      "main": "index.js",
+      "dependencies": {
+        "@cloudbase/node-sdk": "^3.3.7"
+      }
+    }
+  
