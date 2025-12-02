@@ -162,21 +162,35 @@ export default function MeetingRoomManagementPage(props) {
     }
   };
 
-  // 修复：加载会议室数据 - 使用正确的字段名
+  // 修复：加载会议室数据 - 处理openid权限问题
   const loadMeetingRooms = async () => {
     try {
       console.log('开始加载会议室数据...');
+      console.log('当前用户:', currentUser);
+      console.log('是否为管理员:', isAdmin);
+      let params = {
+        select: {
+          $master: true
+        },
+        orderBy: [{
+          createdAt: 'desc'
+        }]
+      };
+
+      // 如果不是管理员，只显示当前用户创建的会议室
+      if (!isAdmin && currentUser) {
+        params.filter = {
+          where: {
+            _openid: {
+              $eq: currentUser.userId
+            }
+          }
+        };
+      }
       const result = await $w.cloud.callDataSource({
         dataSourceName: 'mc_meeting_room',
         methodName: 'wedaGetRecordsV2',
-        params: {
-          select: {
-            $master: true
-          },
-          orderBy: [{
-            createdAt: 'desc'
-          }]
-        }
+        params: params
       });
       console.log('会议室数据加载结果:', result);
       if (result.records && Array.isArray(result.records)) {
@@ -197,20 +211,32 @@ export default function MeetingRoomManagementPage(props) {
     }
   };
 
-  // 加载预约数据
+  // 加载预约数据 - 同样处理openid权限
   const loadBookings = async () => {
     try {
+      let params = {
+        select: {
+          $master: true
+        },
+        orderBy: [{
+          createdAt: 'desc'
+        }]
+      };
+
+      // 如果不是管理员，只显示当前用户的预约
+      if (!isAdmin && currentUser) {
+        params.filter = {
+          where: {
+            _openid: {
+              $eq: currentUser.userId
+            }
+          }
+        };
+      }
       const result = await $w.cloud.callDataSource({
         dataSourceName: 'mc_meeting_booking',
         methodName: 'wedaGetRecordsV2',
-        params: {
-          select: {
-            $master: true
-          },
-          orderBy: [{
-            createdAt: 'desc'
-          }]
-        }
+        params: params
       });
       if (result.records) {
         setBookings(result.records);
@@ -567,14 +593,21 @@ export default function MeetingRoomManagementPage(props) {
     }));
   };
 
+  // 修复：当用户信息加载完成后重新加载会议室数据
+  React.useEffect(() => {
+    if (currentUser !== null) {
+      console.log('用户信息已加载，重新加载会议室数据...');
+      loadMeetingRooms();
+      loadBookings();
+    }
+  }, [currentUser]);
+
   // 初始化
   React.useEffect(() => {
     console.log('组件挂载，开始加载数据...');
-    loadMeetingRooms();
-    loadBookings();
+    loadUserInfo();
     loadMeetingDevices();
     loadMeetingServices();
-    loadUserInfo();
   }, []);
 
   // 跳转到预定页面
@@ -880,7 +913,9 @@ export default function MeetingRoomManagementPage(props) {
           {meetingRooms.length === 0 ? <div className="text-center py-12">
             <Building className="w-16 h-16 mx-auto text-gray-300 mb-4" />
             <h3 className="text-lg font-medium text-gray-900">暂无会议室</h3>
-            <p className="text-gray-600">请添加会议室信息</p>
+            <p className="text-gray-600">
+              {isAdmin ? '请添加会议室信息' : '暂无权限查看会议室，请联系管理员'}
+            </p>
           </div> : <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {meetingRooms.map(room => <Card key={room._id} className="hover:shadow-lg transition-shadow">
               <CardHeader className="pb-3">
@@ -905,6 +940,10 @@ export default function MeetingRoomManagementPage(props) {
                     <Building className="w-4 h-4 mr-2 text-blue-600" />
                     <span>会议室ID：{room.roomId}</span>
                   </div>
+                  {room._openid && <div className="flex items-center text-sm">
+                    <User className="w-4 h-4 mr-2 text-gray-600" />
+                    <span>创建者：{room._openid === currentUser?.userId ? '我' : room._openid}</span>
+                  </div>}
                 </div>
 
                 {isAdmin && <div className="flex space-x-2 pt-2">
