@@ -17,6 +17,7 @@ export default function MeetingRoomManagementPage(props) {
   } = useToast();
   const [activeTab, setActiveTab] = React.useState('approval');
   const [meetingRooms, setMeetingRooms] = React.useState([]);
+  const [availableRooms, setAvailableRooms] = React.useState([]); // 新增：可用会议室
   const [bookings, setBookings] = React.useState([]);
   const [meetingDevices, setMeetingDevices] = React.useState([]);
   const [meetingServices, setMeetingServices] = React.useState([]);
@@ -169,9 +170,15 @@ export default function MeetingRoomManagementPage(props) {
       });
       if (result.records) {
         setMeetingRooms(result.records);
+
+        // 过滤可用会议室：状态为"可使用"的会议室
+        const available = result.records.filter(room => room.status === '可使用');
+        setAvailableRooms(available);
         console.log('加载会议室数据成功:', result.records);
+        console.log('可用会议室:', available);
       } else {
         console.log('未找到会议室数据');
+        setAvailableRooms([]);
       }
     } catch (error) {
       console.error('加载会议室数据失败:', error);
@@ -180,6 +187,7 @@ export default function MeetingRoomManagementPage(props) {
         description: "加载会议室数据失败",
         variant: "destructive"
       });
+      setAvailableRooms([]);
     }
   };
 
@@ -235,7 +243,7 @@ export default function MeetingRoomManagementPage(props) {
     return room ? room.status : '未知状态';
   };
 
-  // 获取状态颜色
+  // 获取状态颜色 - 修复：使用数据库中的实际状态值
   const getStatusColor = status => {
     switch (status) {
       case '待审批':
@@ -244,6 +252,20 @@ export default function MeetingRoomManagementPage(props) {
         return 'bg-green-100 text-green-800';
       case '已拒绝':
         return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  // 获取会议室状态徽章样式 - 新增：根据数据库状态值
+  const getRoomStatusBadge = status => {
+    switch (status) {
+      case '可使用':
+        return 'bg-green-100 text-green-800';
+      case '已停用':
+        return 'bg-red-100 text-red-800';
+      case '维护中':
+        return 'bg-yellow-100 text-yellow-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
@@ -483,16 +505,21 @@ export default function MeetingRoomManagementPage(props) {
           <CardTitle className="flex items-center">
             <Building className="w-5 h-5 mr-2" />
             可用会议室列表
+            <Badge variant="outline" className="ml-2">
+              共 {availableRooms.length} 个可用会议室
+            </Badge>
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {meetingRooms.length === 0 ? <div className="text-center py-4">
+          {availableRooms.length === 0 ? <div className="text-center py-4">
+              <Building className="w-12 h-12 mx-auto text-gray-400 mb-2" />
               <p className="text-gray-500">暂无可用会议室</p>
+              <p className="text-sm text-gray-400 mt-1">所有会议室当前不可用或正在维护中</p>
             </div> : <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {meetingRooms.map(room => <div key={room._id} className="border rounded-lg p-4 bg-white">
+              {availableRooms.map(room => <div key={room._id} className="border rounded-lg p-4 bg-white hover:shadow-md transition-shadow">
                   <div className="flex justify-between items-start mb-2">
                     <h3 className="font-semibold text-lg">{room.name}</h3>
-                    <Badge variant={room.status === '可用' ? 'default' : 'destructive'}>
+                    <Badge className={getRoomStatusBadge(room.status)}>
                       {room.status}
                     </Badge>
                   </div>
@@ -505,6 +532,9 @@ export default function MeetingRoomManagementPage(props) {
                       <Users className="w-4 h-4 mr-2" />
                       <span>容纳人数: {room.capacity}人</span>
                     </div>
+                    {room.roomId && <div className="flex items-center">
+                        <span className="text-xs bg-gray-100 px-2 py-1 rounded">ID: {room.roomId}</span>
+                      </div>}
                   </div>
                 </div>)}
             </div>}
@@ -535,7 +565,7 @@ export default function MeetingRoomManagementPage(props) {
 
           {pendingBookings.length === 0 ? <div className="text-center py-12">
             <ClipboardList className="w-16 h-16 mx-auto text-gray-300 mb-4" />
-            <h3 className="text-lg font-medium text-gray-900">暂无待审批申请</h3>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">暂无待审批申请</h3>
             <p className="text-gray-600">所有申请都已处理完毕</p>
           </div> : <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {pendingBookings.map(booking => <Card key={booking._id} className="hover:shadow-lg transition-shadow">
@@ -642,7 +672,7 @@ export default function MeetingRoomManagementPage(props) {
 
           {approvalHistory.length === 0 ? <div className="text-center py-12">
             <History className="w-16 h-16 mx-auto text-gray-300 mb-4" />
-            <h3 className="text-lg font-medium text-gray-900">暂无审批历史</h3>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">暂无审批历史</h3>
             <p className="text-gray-600">还没有处理任何申请</p>
           </div> : <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {approvalHistory.map(booking => {
