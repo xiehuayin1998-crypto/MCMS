@@ -17,12 +17,14 @@ export default function MeetingRoomManagementPage(props) {
   } = useToast();
   const [activeTab, setActiveTab] = React.useState('approval');
   const [meetingRooms, setMeetingRooms] = React.useState([]);
+  const [availableRooms, setAvailableRooms] = React.useState([]); // 新增：可用会议室
   const [bookings, setBookings] = React.useState([]);
   const [meetingDevices, setMeetingDevices] = React.useState([]);
   const [meetingServices, setMeetingServices] = React.useState([]);
   const [isLoading, setIsLoading] = React.useState(false);
   const [currentUser, setCurrentUser] = React.useState(null);
   const [isAdmin, setIsAdmin] = React.useState(false);
+  const [dataLoading, setDataLoading] = React.useState(true); // 新增：数据加载状态
 
   // 新增状态：撤销对话框
   const [revokeDialogOpen, setRevokeDialogOpen] = React.useState(false);
@@ -62,9 +64,17 @@ export default function MeetingRoomManagementPage(props) {
       });
       if (result.records) {
         setMeetingDevices(result.records);
+        console.log('会议设备数据加载成功:', result.records);
+      } else {
+        console.log('未找到会议设备数据');
       }
     } catch (error) {
       console.error('加载会议设备数据失败:', error);
+      toast({
+        title: "错误",
+        description: "加载会议设备数据失败",
+        variant: "destructive"
+      });
     }
   };
 
@@ -86,9 +96,17 @@ export default function MeetingRoomManagementPage(props) {
       });
       if (result.records) {
         setMeetingServices(result.records);
+        console.log('会议服务数据加载成功:', result.records);
+      } else {
+        console.log('未找到会议服务数据');
       }
     } catch (error) {
       console.error('加载会议服务数据失败:', error);
+      toast({
+        title: "错误",
+        description: "加载会议服务数据失败",
+        variant: "destructive"
+      });
     }
   };
 
@@ -155,6 +173,8 @@ export default function MeetingRoomManagementPage(props) {
   // 加载会议室数据 - 使用mc_meeting_room数据源的真实数据
   const loadMeetingRooms = async () => {
     try {
+      setDataLoading(true);
+      console.log('开始加载会议室数据...');
       const result = await $w.cloud.callDataSource({
         dataSourceName: 'mc_meeting_room',
         methodName: 'wedaGetRecordsV2',
@@ -167,19 +187,42 @@ export default function MeetingRoomManagementPage(props) {
           }]
         }
       });
-      if (result.records) {
+      console.log('会议室数据API响应:', result);
+      if (result && result.records) {
         setMeetingRooms(result.records);
+
+        // 过滤可用会议室：状态为"可使用"的会议室
+        const available = result.records.filter(room => room.status === '可使用');
+        setAvailableRooms(available);
         console.log('加载会议室数据成功:', result.records);
+        console.log('可用会议室数量:', available.length);
+        console.log('可用会议室详情:', available);
+        toast({
+          title: "数据加载成功",
+          description: `已加载 ${result.records.length} 个会议室，其中 ${available.length} 个可用`
+        });
       } else {
-        console.log('未找到会议室数据');
+        console.log('未找到会议室数据，响应结果:', result);
+        setMeetingRooms([]);
+        setAvailableRooms([]);
+        toast({
+          title: "提示",
+          description: "未找到会议室数据",
+          variant: "default"
+        });
       }
     } catch (error) {
       console.error('加载会议室数据失败:', error);
+      console.error('错误详情:', error.message, error.stack);
       toast({
-        title: "错误",
-        description: "加载会议室数据失败",
+        title: "加载失败",
+        description: error.message || "无法加载会议室数据，请检查网络连接",
         variant: "destructive"
       });
+      setMeetingRooms([]);
+      setAvailableRooms([]);
+    } finally {
+      setDataLoading(false);
     }
   };
 
@@ -200,6 +243,9 @@ export default function MeetingRoomManagementPage(props) {
       });
       if (result.records) {
         setBookings(result.records);
+        console.log('预约数据加载成功:', result.records);
+      } else {
+        console.log('未找到预约数据');
       }
     } catch (error) {
       console.error('加载预约数据失败:', error);
@@ -249,15 +295,15 @@ export default function MeetingRoomManagementPage(props) {
     }
   };
 
-  // 获取会议室状态标签样式 - 复用服务管理的样式
+  // 获取会议室状态标签样式 - 修复：使用数据库中的实际状态值
   const getRoomStatusBadge = status => {
     switch (status) {
-      case '可用':
+      case '可使用':
         return 'bg-green-100 text-green-800 border-green-200';
-      case '占用':
-        return 'bg-orange-100 text-orange-800 border-orange-200';
-      case '维护中':
+      case '已停用':
         return 'bg-red-100 text-red-800 border-red-200';
+      case '维护中':
+        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
       default:
         return 'bg-gray-100 text-gray-800 border-gray-200';
     }
@@ -491,26 +537,63 @@ export default function MeetingRoomManagementPage(props) {
         </div>}
       </div>
 
-      {/* 会议室列表信息展示 - 修改为复用服务管理的标签样式 */}
+      {/* 会议室列表信息展示 */}
       <Card className="mb-6">
         <CardHeader>
           <CardTitle className="flex items-center">
             <Building className="w-5 h-5 mr-2" />
-            可用会议室列表
+            会议室列表
+            {dataLoading && <div className="ml-2 animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>}
+            <Badge variant="outline" className="ml-2">
+              共 {meetingRooms.length} 个会议室，{availableRooms.length} 个可用
+            </Badge>
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {meetingRooms.length === 0 ? <div className="text-center py-4">
-              <p className="text-gray-500">暂无可用会议室</p>
-            </div> : <div className="flex flex-wrap gap-3">
-              {meetingRooms.map(room => <div key={room._id} className="inline-flex items-center px-3 py-2 rounded-full border text-sm font-medium transition-colors hover:bg-gray-50">
-                  <span className="font-medium text-gray-900">{room.name}</span>
-                  <span className={`ml-2 px-2 py-1 rounded-full text-xs border ${getRoomStatusBadge(room.status)}`}>
-                    {room.status}
-                  </span>
-                  {room.location && <span className="ml-2 text-gray-600 text-xs">({room.location})</span>}
-                  {room.capacity && <span className="ml-2 text-gray-600 text-xs">{room.capacity}人</span>}
-                </div>)}
+          {dataLoading ? <div className="text-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+              <p className="mt-2 text-gray-600">正在加载会议室数据...</p>
+            </div> : meetingRooms.length === 0 ? <div className="text-center py-8">
+              <Building className="w-16 h-16 mx-auto text-gray-400 mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">暂无会议室数据</h3>
+              <p className="text-gray-600">请检查数据源配置或联系管理员</p>
+              <Button onClick={loadMeetingRooms} className="mt-4">
+                <RefreshCw className="w-4 h-4 mr-2" />
+                重新加载
+              </Button>
+            </div> : <div className="space-y-4">
+              {/* 所有会议室 */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">所有会议室</h3>
+                <div className="flex flex-wrap gap-3">
+                  {meetingRooms.map(room => <div key={room._id} className="inline-flex items-center px-3 py-2 rounded-full border text-sm font-medium transition-colors hover:bg-gray-50 bg-white">
+                      <span className="font-medium text-gray-900">{room.name}</span>
+                      <span className={`ml-2 px-2 py-1 rounded-full text-xs border ${getRoomStatusBadge(room.status)}`}>
+                        {room.status}
+                      </span>
+                      {room.location && <span className="ml-2 text-gray-600 text-xs">({room.location})</span>}
+                      {room.capacity && <span className="ml-2 text-gray-600 text-xs">{room.capacity}人</span>}
+                    </div>)}
+                </div>
+              </div>
+              
+              {/* 可用会议室 */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">可用会议室</h3>
+                {availableRooms.length === 0 ? <div className="text-center py-4 bg-gray-50 rounded-lg">
+                  <p className="text-gray-500">暂无可用会议室</p>
+                  <p className="text-sm text-gray-400 mt-1">所有会议室当前不可用或正在维护中</p>
+                </div> : <div className="flex flex-wrap gap-3">
+                  {availableRooms.map(room => <div key={room._id} className="inline-flex items-center px-3 py-2 rounded-full border text-sm font-medium transition-colors hover:bg-green-50 bg-green-50 border-green-200">
+                      <span className="font-medium text-green-900">{room.name}</span>
+                      <span className="ml-2 px-2 py-1 rounded-full text-xs bg-green-100 text-green-800 border border-green-200">
+                        可使用
+                      </span>
+                      {room.location && <span className="ml-2 text-green-700 text-xs">({room.location})</span>}
+                      {room.capacity && <span className="ml-2 text-green-700 text-xs">{room.capacity}人</span>}
+                    </div>)}
+                </div>}
+              </div>
             </div>}
         </CardContent>
       </Card>
