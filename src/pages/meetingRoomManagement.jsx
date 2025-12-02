@@ -162,9 +162,10 @@ export default function MeetingRoomManagementPage(props) {
     }
   };
 
-  // 加载会议室数据
+  // 修复：加载会议室数据 - 使用正确的字段名
   const loadMeetingRooms = async () => {
     try {
+      console.log('开始加载会议室数据...');
       const result = await $w.cloud.callDataSource({
         dataSourceName: 'mc_meeting_room',
         methodName: 'wedaGetRecordsV2',
@@ -177,16 +178,22 @@ export default function MeetingRoomManagementPage(props) {
           }]
         }
       });
-      if (result.records) {
+      console.log('会议室数据加载结果:', result);
+      if (result.records && Array.isArray(result.records)) {
+        console.log('成功获取会议室数据:', result.records.length, '条记录');
         setMeetingRooms(result.records);
+      } else {
+        console.log('未获取到会议室数据或数据格式不正确');
+        setMeetingRooms([]);
       }
     } catch (error) {
       console.error('加载会议室数据失败:', error);
       toast({
         title: "错误",
-        description: "加载会议室数据失败",
+        description: `加载会议室数据失败: ${error.message || '未知错误'}`,
         variant: "destructive"
       });
+      setMeetingRooms([]);
     }
   };
 
@@ -562,6 +569,7 @@ export default function MeetingRoomManagementPage(props) {
 
   // 初始化
   React.useEffect(() => {
+    console.log('组件挂载，开始加载数据...');
     loadMeetingRooms();
     loadBookings();
     loadMeetingDevices();
