@@ -82,19 +82,11 @@ export function EmployeeEditDialog({
     return true;
   }, [currentUser, employee]);
 
-  // // 验证身份证号函数
-  // const validateIdCard = idCard => {
-  //   if (!idCard) return true;
-  //   const regex = /(^\d{15}$)|(^\d{18}$)|(^\d{17}(\d|X|x)$)/;
-  //   return regex.test(idCard);
-  // };
-  // 简单验证墨西哥CURP（身份证）函数
+  // 验证身份证号函数
   const validateIdCard = idCard => {
-    if (!curp) return true;
-    // CURP格式：4字母 + 6数字日期 + 1性别 + 2州代码 + 3辅音 + 2校验位
-    // 总共18位字符，最后2位可能是数字或字母
-    const idCard = /^[A-Za-z]{4}\d{6}[HMhm][A-Za-z]{2}[A-Za-z]{3}[0-9A-Za-z]{2}$/;
-    return idCard.test(idCard);
+    if (!idCard) return true;
+    const regex = /^[A-Za-z]{4}\d{6}[HMhm][A-Za-z]{2}[A-Za-z]{3}[0-9A-Za-z]{2}$/;
+    return regex.test(idCard);
   };
 
   // 墨西哥时区调整：将日期向后移动一天

@@ -517,27 +517,27 @@ export default function EmployeeManagement(props) {
             <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
               用户管理系统
               {isReadOnlySearch && <Badge variant="secondary" className="bg-blue-100 text-blue-800">
-                查看模式
-              </Badge>}
+                  查看模式
+                </Badge>}
             </h1>
             <p className="text-gray-600 mt-1">管理企业员工信息和权限分配</p>
           </div>
         </div>
-
+        
         <div className="flex flex-wrap gap-3">
           {canManageUsers() && <>
-            <Button variant="outline" onClick={() => setImportExportOpen(true)} className="flex items-center bg-green-50 text-green-700 hover:bg-green-100 border-green-200">
-              <Upload className="w-4 h-4 mr-2" />
-              批量操作
-            </Button>
-            <Button onClick={() => {
+              <Button variant="outline" onClick={() => setImportExportOpen(true)} className="flex items-center bg-green-50 text-green-700 hover:bg-green-100 border-green-200">
+                <Upload className="w-4 h-4 mr-2" />
+                批量操作
+              </Button>
+              <Button onClick={() => {
               setSelectedEmployee(null);
               setEditDialogOpen(true);
             }} className="flex items-center bg-blue-600 hover:bg-blue-700">
-              <Plus className="w-4 h-4 mr-2" />
-              新增用户
-            </Button>
-          </>}
+                <Plus className="w-4 h-4 mr-2" />
+                新增用户
+              </Button>
+            </>}
         </div>
       </div>
 
@@ -554,7 +554,7 @@ export default function EmployeeManagement(props) {
             </div>
           </CardContent>
         </Card>
-
+        
         <Card className="bg-gradient-to-r from-green-500 to-green-600 text-white">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -566,7 +566,7 @@ export default function EmployeeManagement(props) {
             </div>
           </CardContent>
         </Card>
-
+        
         <Card className="bg-gradient-to-r from-purple-500 to-purple-600 text-white">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -576,8 +576,8 @@ export default function EmployeeManagement(props) {
                   {isAdmin ? '管理员' : '普通用户'}
                 </p>
                 {currentUserInfo && <p className="text-purple-200 text-sm mt-1">
-                  {currentUserInfo.name} ({currentUserInfo.employee_number || '无工号'})
-                </p>}
+                    {currentUserInfo.name} ({currentUserInfo.employee_number || '无工号'})
+                  </p>}
               </div>
               <Shield className="w-12 h-12 opacity-20" />
             </div>
@@ -591,25 +591,25 @@ export default function EmployeeManagement(props) {
               <div>
                 <p className="text-orange-100">当前用户</p>
                 {userLoading ? <div className="flex items-center space-x-2">
-                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
-                  <span className="text-orange-200 text-sm">加载中...</span>
-                </div> : currentUserInfo ? <>
-                  <p className="text-2xl font-bold truncate max-w-[150px]">
-                    {currentUserInfo.username || currentUserInfo.name || '未知用户'}
-                  </p>
-                  <div className="flex items-center mt-2">
-                    {isAdmin ? <UserCheck className="w-4 h-4 mr-1 text-green-300" /> : <UserX className="w-4 h-4 mr-1 text-red-300" />}
-                    <span className="text-orange-200 text-sm">
-                      {isAdmin ? '管理员' : '普通用户'}
-                    </span>
-                  </div>
-                </> : <>
-                  <p className="text-2xl font-bold">未登录</p>
-                  <div className="flex items-center mt-2">
-                    <UserX className="w-4 h-4 mr-1 text-red-300" />
-                    <span className="text-orange-200 text-sm">请先登录系统</span>
-                  </div>
-                </>}
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
+                    <span className="text-orange-200 text-sm">加载中...</span>
+                  </div> : currentUserInfo ? <>
+                    <p className="text-2xl font-bold truncate max-w-[150px]">
+                      {currentUserInfo.username || currentUserInfo.name || '未知用户'}
+                    </p>
+                    <div className="flex items-center mt-2">
+                      {isAdmin ? <UserCheck className="w-4 h-4 mr-1 text-green-300" /> : <UserX className="w-4 h-4 mr-1 text-red-300" />}
+                      <span className="text-orange-200 text-sm">
+                        {isAdmin ? '管理员' : '普通用户'}
+                      </span>
+                    </div>
+                  </> : <>
+                    <p className="text-2xl font-bold">未登录</p>
+                    <div className="flex items-center mt-2">
+                      <UserX className="w-4 h-4 mr-1 text-red-300" />
+                      <span className="text-orange-200 text-sm">请先登录系统</span>
+                    </div>
+                  </>}
               </div>
               <div className="bg-orange-400/20 rounded-full p-3">
                 {userLoading ? <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div> : currentUserInfo && isAdmin ? <UserCheck className="w-8 h-8 text-white" /> : <UserX className="w-8 h-8 text-white" />}
@@ -625,52 +625,52 @@ export default function EmployeeManagement(props) {
           <CardTitle className="flex items-center justify-between">
             <span className="text-xl font-semibold text-gray-900">用户列表</span>
             {isReadOnlySearch && <span className="text-sm text-blue-600 font-normal flex items-center">
-              <User className="w-4 h-4 mr-1" />
-              当前为只读查看模式
-            </span>}
+                <User className="w-4 h-4 mr-1" />
+                当前为只读查看模式
+              </span>}
             {!canManageUsers() && <span className="text-sm text-orange-600 font-normal flex items-center">
-              <Shield className="w-4 h-4 mr-1" />
-              普通用户权限，只能查看和修改自己的信息
-            </span>}
+                <Shield className="w-4 h-4 mr-1" />
+                普通用户权限，只能查看和修改自己的信息
+              </span>}
           </CardTitle>
         </CardHeader>
-
+        
         <CardContent className="p-6">
           {/* 搜索筛选区域 */}
           <div className="flex flex-col lg:flex-row gap-4 mb-6">
             <div className="flex-1">
               <EmployeeSearchFilter onSearch={handleSearch} readOnly={isReadOnlySearch} initialSearchTerm={isReadOnlySearch ? searchParams.searchTerm : ''} />
             </div>
-
+            
             {/* 操作按钮组 */}
             <div className="flex flex-col sm:flex-row gap-3">
               {isReadOnlySearch ? <Button onClick={handleRefresh} className="bg-blue-600 hover:bg-blue-700">
-                <RefreshCw className="w-4 h-4 mr-2" />
-                刷新信息
-              </Button> : <>
-                <Button onClick={handleSearchClick} className="bg-blue-600 hover:bg-blue-700">
-                  <Search className="w-4 h-4 mr-2" />
-                  搜索
-                </Button>
-                <Button variant="outline" onClick={handleReset}>
-                  <Filter className="w-4 h-4 mr-2" />
-                  重置
-                </Button>
-              </>}
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  刷新信息
+                </Button> : <>
+                  <Button onClick={handleSearchClick} className="bg-blue-600 hover:bg-blue-700">
+                    <Search className="w-4 h-4 mr-2" />
+                    搜索
+                  </Button>
+                  <Button variant="outline" onClick={handleReset}>
+                    <Filter className="w-4 h-4 mr-2" />
+                    重置
+                  </Button>
+                </>}
             </div>
           </div>
-
+          
           {/* 内容区域 */}
           <div className="mt-4">
             {!hasSearched ? <div className="text-center py-12 bg-gradient-to-br from-gray-50 to-blue-50 rounded-lg border-2 border-dashed border-gray-200">
-              <Search className="w-16 h-16 mx-auto text-gray-400 mb-4" />
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                {isReadOnlySearch ? '正在加载您的信息...' : '开始搜索用户'}
-              </h3>
-              <p className="text-gray-600 max-w-md mx-auto">
-                {isReadOnlySearch ? '系统将自动显示您的个人信息，确保数据安全' : '输入姓名、用户名或工号进行搜索，支持部门筛选'}
-              </p>
-            </div> : <EmployeeTable employees={filteredEmployees} onEdit={emp => {
+                <Search className="w-16 h-16 mx-auto text-gray-400 mb-4" />
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                  {isReadOnlySearch ? '正在加载您的信息...' : '开始搜索用户'}
+                </h3>
+                <p className="text-gray-600 max-w-md mx-auto">
+                  {isReadOnlySearch ? '系统将自动显示您的个人信息，确保数据安全' : '输入姓名、用户名或工号进行搜索，支持部门筛选'}
+                </p>
+              </div> : <EmployeeTable employees={filteredEmployees} onEdit={emp => {
               setSelectedEmployee(emp);
               setEditDialogOpen(true);
             }} onDelete={handleDelete} loading={loading} totalCount={totalCount} currentPage={currentPage} pageSize={pageSize} onPageChange={handlePageChange} canEdit={canManageUsers()} $w={$w} // 传递$w参数
@@ -681,7 +681,7 @@ export default function EmployeeManagement(props) {
 
       {/* 对话框组件 */}
       <EmployeeEditDialog open={editDialogOpen} onOpenChange={setEditDialogOpen} employee={selectedEmployee} onSave={handleSave} $w={$w} currentUser={currentUserInfo} />
-
+      
       <UserJsonImportExport open={importExportOpen} onOpenChange={setImportExportOpen} onComplete={handleImportExportComplete} $w={$w} />
     </div>
   </div>;
