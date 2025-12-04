@@ -82,11 +82,19 @@ export function EmployeeEditDialog({
     return true;
   }, [currentUser, employee]);
 
-  // 验证身份证号函数
+  // // 验证身份证号函数
+  // const validateIdCard = idCard => {
+  //   if (!idCard) return true;
+  //   const regex = /(^\d{15}$)|(^\d{18}$)|(^\d{17}(\d|X|x)$)/;
+  //   return regex.test(idCard);
+  // };
+  // 简单验证墨西哥CURP（身份证）函数
   const validateIdCard = idCard => {
-    if (!idCard) return true;
-    const regex = /(^\d{15}$)|(^\d{18}$)|(^\d{17}(\d|X|x)$)/;
-    return regex.test(idCard);
+    if (!curp) return true;
+    // CURP格式：4字母 + 6数字日期 + 1性别 + 2州代码 + 3辅音 + 2校验位
+    // 总共18位字符，最后2位可能是数字或字母
+    const idCard = /^[A-Za-z]{4}\d{6}[HMhm][A-Za-z]{2}[A-Za-z]{3}[0-9A-Za-z]{2}$/;
+    return idCard.test(idCard);
   };
 
   // 墨西哥时区调整：将日期向后移动一天
@@ -670,14 +678,14 @@ export function EmployeeEditDialog({
       </DialogHeader>
 
       {permissionError && <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
-          <div className="flex items-center">
-            <AlertCircle className="w-5 h-5 text-red-600 mr-2" />
-            <span className="text-red-800 font-medium">{permissionError}</span>
-          </div>
-          {currentUser && !currentUser.isAdmin && <p className="text-red-600 text-sm mt-1">
-              您只能修改自己的信息。如需修改其他用户信息，请联系管理员。
-            </p>}
-        </div>}
+        <div className="flex items-center">
+          <AlertCircle className="w-5 h-5 text-red-600 mr-2" />
+          <span className="text-red-800 font-medium">{permissionError}</span>
+        </div>
+        {currentUser && !currentUser.isAdmin && <p className="text-red-600 text-sm mt-1">
+          您只能修改自己的信息。如需修改其他用户信息，请联系管理员。
+        </p>}
+      </div>}
 
       <div className="space-y-6 py-4">
         {renderBasicInfo()}
