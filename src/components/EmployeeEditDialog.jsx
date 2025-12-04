@@ -82,12 +82,12 @@ export function EmployeeEditDialog({
     return true;
   }, [currentUser, employee]);
 
-  // // 验证身份证号函数
-  // const validateIdCard = idCard => {
-  //   if (!idCard) return true;
-  //   const regex = /(^\d{15}$)|(^\d{18}$)|(^\d{17}(\d|X|x)$)/;
-  //   return regex.test(idCard);
-  // };
+  // 验证身份证号函数
+  const validateIdCard = idCard => {
+    if (!idCard) return true;
+    const regex = /(^\d{15}$)|(^\d{18}$)|(^\d{17}(\d|X|x)$)/;
+    return regex.test(idCard);
+  };
 
   // 墨西哥时区调整：将日期向后移动一天
   const adjustDateForMexico = dateString => {
