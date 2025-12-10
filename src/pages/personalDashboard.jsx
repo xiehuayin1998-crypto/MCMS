@@ -3,7 +3,7 @@ import React from 'react';
 // @ts-ignore;
 import { Card, CardContent, CardHeader, CardTitle, Badge, Button, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, useToast, Tabs, TabsContent, TabsList, TabsTrigger, Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui';
 // @ts-ignore;
-import { Calendar, Clock, Users, Building, AlertCircle, CheckCircle, XCircle, RefreshCw, Eye, MessageSquare, Filter, FileText, Shield, Key, ChevronDown, ChevronUp, User } from 'lucide-react';
+import { Calendar, Clock, Users, Building, AlertCircle, CheckCircle, XCircle, RefreshCw, Eye, MessageSquare, Filter, FileText, Shield, Key, ChevronDown, ChevronUp, User, Trash2 } from 'lucide-react';
 
 // @ts-ignore;
 import { UserHeader } from '@/components/UserHeader';
@@ -389,7 +389,7 @@ export default function PersonalDashboard(props) {
     });
   };
 
-  // 取消申请
+  // 取消申请（待审批状态）
   const handleCancel = async booking => {
     try {
       const result = await $w.cloud.callDataSource({
@@ -417,6 +417,68 @@ export default function PersonalDashboard(props) {
       toast({
         title: "取消失败",
         description: error.message || "取消预约时发生错误",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // 新增：取消已通过的会议
+  const handleCancelMeeting = async booking => {
+    try {
+      // 检查会议是否已经开始
+      const now = new Date().getTime();
+      if (now >= booking.startTime) {
+        toast({
+          title: "无法取消",
+          description: "会议已经开始或已结束，无法取消",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // 确认取消操作
+      if (!window.confirm(`确定要取消会议 "${booking.topic}" 吗？取消后会议室将被释放，其他用户可以重新预约。`)) {
+        return;
+      }
+
+      // 更新会议状态为已取消
+      const result = await $w.cloud.callDataSource({
+        dataSourceName: 'mc_meeting_booking',
+        methodName: 'wedaUpdateV2',
+        params: {
+          data: {
+            status: '已取消',
+            cancelledAt: new Date().getTime(),
+            cancelledBy: currentUser?.name || currentUser?.username || '未知用户',
+            updatedAt: new Date().getTime()
+          },
+          filter: {
+            where: {
+              _id: {
+                $eq: booking._id
+              }
+            }
+          }
+        }
+      });
+      if (result.count > 0) {
+        toast({
+          title: "取消成功",
+          description: "会议已取消，会议室已释放"
+        });
+        loadUserBookings(currentUser);
+      } else {
+        toast({
+          title: "取消失败",
+          description: "未能取消会议，请重试",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error('取消会议失败:', error);
+      toast({
+        title: "取消失败",
+        description: error.message || "取消会议时发生错误",
         variant: "destructive"
       });
     }
@@ -639,7 +701,7 @@ export default function PersonalDashboard(props) {
       </div>
 
       {/* 功能标签页 */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+      <Tabs value={activeTab} onOpenChange={setActiveTab} className="space-y-6">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="myBookings" className="flex items-center space-x-2">
             <Calendar className="w-4 h-4" />
@@ -777,6 +839,12 @@ export default function PersonalDashboard(props) {
                           
                           {booking.status === '待审批' && <Button size="sm" variant="outline" onClick={() => handleCancel(booking)} className="flex items-center text-red-600">
                               取消申请
+                            </Button>}
+                          
+                          {/* 新增：已通过会议的取消功能 */}
+                          {booking.status === '已通过' && <Button size="sm" variant="outline" onClick={() => handleCancelMeeting(booking)} className="flex items-center text-red-600 border-red-300 hover:bg-red-50">
+                              <Trash2 className="w-4 h-4 mr-1" />
+                              取消会议
                             </Button>}
                         </div>
                       </div>
