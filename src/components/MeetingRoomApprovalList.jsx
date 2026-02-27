@@ -1,9 +1,9 @@
 // @ts-ignore;
 import React from 'react';
 // @ts-ignore;
-import { Card, CardContent, CardHeader, CardTitle, Badge, Button, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, useToast } from '@/components/ui';
+import { Card, CardContent, CardHeader, CardTitle, Badge, Button, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, useToast, Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui';
 // @ts-ignore;
-import { Clock as ClockIcon, CheckCircle, XCircle, Trash2, Eye, MessageSquare, Users, Building, Calendar } from 'lucide-react';
+import { Clock as ClockIcon, CheckCircle, XCircle, Trash2, Eye, MessageSquare, Users, Building, Calendar, CheckCheck } from 'lucide-react';
 
 // @ts-ignore;
 import { BookingRejectDialog } from './BookingRejectDialog';
@@ -19,6 +19,8 @@ export function MeetingRoomApprovalList({
   const [deletingBooking, setDeletingBooking] = React.useState(null);
   const [viewingBooking, setViewingBooking] = React.useState(null);
   const [rooms, setRooms] = React.useState({});
+  const [showBatchApproveDialog, setShowBatchApproveDialog] = React.useState(false);
+  const [isBatchApproving, setIsBatchApproving] = React.useState(false);
   const {
     toast
   } = useToast();
@@ -207,6 +209,83 @@ export function MeetingRoomApprovalList({
     }
   };
 
+  // 一键审批所有待审批申请
+  const handleBatchApprove = async () => {
+    if (bookings.length === 0) {
+      toast({
+        title: "无待审批申请",
+        description: "当前没有待审批的会议室申请",
+        variant: "destructive"
+      });
+      return;
+    }
+    setShowBatchApproveDialog(true);
+  };
+
+  // 确认批量审批
+  const confirmBatchApprove = async () => {
+    try {
+      setIsBatchApproving(true);
+      let successCount = 0;
+      let failCount = 0;
+
+      // 批量更新所有待审批申请
+      for (const booking of bookings) {
+        try {
+          const result = await $w.cloud.callDataSource({
+            dataSourceName: 'mc_meeting_booking',
+            methodName: 'wedaUpdateV2',
+            params: {
+              data: {
+                status: '已通过',
+                updatedAt: Date.now()
+              },
+              filter: {
+                where: {
+                  _id: {
+                    $eq: booking._id
+                  }
+                }
+              }
+            }
+          });
+          if (result.count > 0) {
+            successCount++;
+          } else {
+            failCount++;
+          }
+        } catch (error) {
+          console.error(`审批申请 ${booking.topic} 失败:`, error);
+          failCount++;
+        }
+      }
+      if (successCount > 0) {
+        toast({
+          title: "批量审批完成",
+          description: `成功审批 ${successCount} 条申请${failCount > 0 ? `，失败 ${failCount} 条` : ''}`
+        });
+        loadPendingBookings();
+        onRefresh && onRefresh();
+      } else {
+        toast({
+          title: "批量审批失败",
+          description: "所有申请审批失败，请重试",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error('批量审批失败:', error);
+      toast({
+        title: "批量审批失败",
+        description: error.message || "批量审批过程中发生错误",
+        variant: "destructive"
+      });
+    } finally {
+      setIsBatchApproving(false);
+      setShowBatchApproveDialog(false);
+    }
+  };
+
   // 格式化时间
   const formatDateTime = timestamp => {
     if (!timestamp) return '-';
@@ -251,10 +330,16 @@ export function MeetingRoomApprovalList({
   return <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold text-gray-900">会议室申请审批</h2>
-        <Button variant="outline" onClick={loadPendingBookings} className="flex items-center">
-          <ClockIcon className="w-4 h-4 mr-2" />
-          刷新
-        </Button>
+        <div className="flex space-x-2">
+          <Button variant="outline" onClick={loadPendingBookings} className="flex items-center">
+            <ClockIcon className="w-4 h-4 mr-2" />
+            刷新
+          </Button>
+          <Button className="bg-green-600 hover:bg-green-700 flex items-center" onClick={handleBatchApprove} disabled={bookings.length === 0}>
+            <CheckCheck className="w-4 h-4 mr-2" />
+            一键审批
+          </Button>
+        </div>
       </div>
 
       {bookings.length === 0 ? <Card>
@@ -345,6 +430,31 @@ export function MeetingRoomApprovalList({
       
       {/* 删除确认对话框 */}
       {deletingBooking && <DeleteConfirmDialog open={!!deletingBooking} onOpenChange={open => !open && setDeletingBooking(null)} onConfirm={() => handleDelete(deletingBooking)} title="确认删除" description={`确定要删除申请 "${deletingBooking.topic}" 吗？此操作不可撤销。`} />}
+      
+      {/* 一键审批确认对话框 */}
+      <Dialog open={showBatchApproveDialog} onOpenChange={setShowBatchApproveDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center">
+              <CheckCheck className="w-5 h-5 mr-2 text-green-600" />
+              确认批量审批
+            </DialogTitle>
+            <DialogDescription>
+              确定要将所有 <span className="font-bold text-green-600">{bookings.length}</span> 条待审批申请全部通过吗？
+              <br />
+              此操作将一次性审批所有待审批的会议室申请，无法撤销。
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowBatchApproveDialog(false)} disabled={isBatchApproving}>
+              取消
+            </Button>
+            <Button className="bg-green-600 hover:bg-green-700" onClick={confirmBatchApprove} disabled={isBatchApproving}>
+              {isBatchApproving ? '审批中...' : '确认全部通过'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       
       {/* 查看详情对话框 */}
       {viewingBooking && <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
