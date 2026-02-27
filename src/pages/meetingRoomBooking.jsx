@@ -37,6 +37,10 @@ export default function MeetingRoomBooking(props) {
   const [selectedDevices, setSelectedDevices] = React.useState([]);
   const [selectedServices, setSelectedServices] = React.useState([]);
 
+  // 新增状态：每周重复功能
+  const [isWeeklyRecurring, setIsWeeklyRecurring] = React.useState(false);
+  const [recurringWeeks, setRecurringWeeks] = React.useState(4); // 默认重复4周
+
   // 获取本地时区偏移（分钟）
   const getTimezoneOffset = () => {
     return new Date().getTimezoneOffset();
@@ -440,8 +444,87 @@ export default function MeetingRoomBooking(props) {
       });
       return;
     }
+
+    // 如果是每周重复，需要检查未来几周的时间冲突
+    if (isWeeklyRecurring && isAdmin) {
+      const [year, month, day] = selectedDate.split('-').map(Number);
+      const baseDate = new Date(year, month - 1, day);
+      const dayOfWeek = baseDate.getDay(); // 0-6, 0是周日
+
+      for (let week = 1; week <= recurringWeeks; week++) {
+        const nextDate = new Date(baseDate);
+        nextDate.setDate(baseDate.getDate() + week * 7);
+        const nextDateStr = `${nextDate.getFullYear()}-${String(nextDate.getMonth() + 1).padStart(2, '0')}-${String(nextDate.getDate()).padStart(2, '0')}`;
+        const nextStartTimeUTC = localDateToUTC(nextDateStr, selectedStartTime);
+        const nextEndTimeUTC = localDateToUTC(nextDateStr, selectedEndTime);
+
+        // 检查该时间段是否已被占用
+        try {
+          const [nYear, nMonth, nDay] = nextDateStr.split('-').map(Number);
+          const localStartOfDay = new Date(nYear, nMonth - 1, nDay, 0, 0, 0, 0);
+          const localEndOfDay = new Date(nYear, nMonth - 1, nDay, 23, 59, 59, 999);
+          const utcStartOfDay = localStartOfDay.getTime();
+          const utcEndOfDay = localEndOfDay.getTime();
+          const conflictResult = await $w.cloud.callDataSource({
+            dataSourceName: 'mc_meeting_booking',
+            methodName: 'wedaGetRecordsV2',
+            params: {
+              filter: {
+                where: {
+                  roomId: {
+                    $eq: selectedRoom
+                  },
+                  startTime: {
+                    $gte: utcStartOfDay
+                  },
+                  endTime: {
+                    $lte: utcEndOfDay
+                  },
+                  status: {
+                    $in: ['待审批', '已通过']
+                  }
+                }
+              }
+            }
+          });
+          if (conflictResult.records && conflictResult.records.length > 0) {
+            const hasTimeConflict = conflictResult.records.some(booking => {
+              return nextStartTimeUTC < booking.endTime && nextEndTimeUTC > booking.startTime;
+            });
+            if (hasTimeConflict) {
+              toast({
+                title: "时间冲突",
+                description: `第${week}周（${nextDateStr}）的时间段已被占用，无法创建重复预订`,
+                variant: "destructive"
+              });
+              return;
+            }
+          }
+        } catch (error) {
+          console.error('检查重复预订冲突失败:', error);
+        }
+      }
+    }
     try {
       setIsLoading(true);
+
+      // 构建重复预订信息
+      let recurringInfo = null;
+      if (isWeeklyRecurring && isAdmin) {
+        recurringInfo = {
+          isRecurring: true,
+          pattern: 'weekly',
+          recurringWeeks: recurringWeeks,
+          baseDate: selectedDate,
+          dayOfWeek: new Date(selectedDate).getDay()
+        };
+      }
+
+      // 将重复信息存储在 description 中
+      const finalDescription = recurringInfo ? JSON.stringify({
+        originalDescription: description,
+        recurringInfo: recurringInfo
+      }) : description;
       const result = await $w.cloud.callDataSource({
         dataSourceName: 'mc_meeting_booking',
         methodName: 'wedaCreateV2',
@@ -453,7 +536,7 @@ export default function MeetingRoomBooking(props) {
             topic,
             applicant,
             attendeeCount: parseInt(attendeeCount),
-            description,
+            description: finalDescription,
             devices: selectedDevices,
             // 保存选择的设备ID数组
             services: selectedServices,
@@ -464,10 +547,51 @@ export default function MeetingRoomBooking(props) {
         }
       });
       if (result.id) {
-        toast({
-          title: "预定成功",
-          description: "会议室预定已提交，等待审批"
-        });
+        // 如果是重复预订，创建后续的预订记录
+        if (isWeeklyRecurring && isAdmin) {
+          const [year, month, day] = selectedDate.split('-').map(Number);
+          const baseDate = new Date(year, month - 1, day);
+          for (let week = 1; week <= recurringWeeks; week++) {
+            const nextDate = new Date(baseDate);
+            nextDate.setDate(baseDate.getDate() + week * 7);
+            const nextDateStr = `${nextDate.getFullYear()}-${String(nextDate.getMonth() + 1).padStart(2, '0')}-${String(nextDate.getDate()).padStart(2, '0')}`;
+            const nextStartTimeUTC = localDateToUTC(nextDateStr, selectedStartTime);
+            const nextEndTimeUTC = localDateToUTC(nextDateStr, selectedEndTime);
+            try {
+              await $w.cloud.callDataSource({
+                dataSourceName: 'mc_meeting_booking',
+                methodName: 'wedaCreateV2',
+                params: {
+                  data: {
+                    roomId: selectedRoom,
+                    startTime: nextStartTimeUTC,
+                    endTime: nextEndTimeUTC,
+                    topic,
+                    applicant,
+                    attendeeCount: parseInt(attendeeCount),
+                    description: finalDescription,
+                    devices: selectedDevices,
+                    services: selectedServices,
+                    status: '待审批',
+                    createdAt: new Date().getTime()
+                  }
+                }
+              });
+            } catch (error) {
+              console.error(`创建第${week}周重复预订失败:`, error);
+            }
+          }
+          toast({
+            title: "预定成功",
+            description: `已创建${recurringWeeks + 1}个重复预订（本周及未来${recurringWeeks}周）`
+          });
+        } else {
+          toast({
+            title: "预定成功",
+            description: "会议室预定已提交，等待审批"
+          });
+        }
+
         // 重置表单
         setSelectedStartTime('');
         setSelectedEndTime('');
@@ -476,6 +600,8 @@ export default function MeetingRoomBooking(props) {
         setAttendeeCount('');
         setSelectedDevices([]);
         setSelectedServices([]);
+        setIsWeeklyRecurring(false);
+        setRecurringWeeks(4);
         loadBookings();
       }
     } catch (error) {
@@ -639,6 +765,45 @@ export default function MeetingRoomBooking(props) {
                       </SelectContent>
                     </Select>
                   </div>
+
+                  {/* 每周重复功能 - 仅管理员可见 */}
+                  {isAdmin && <div className="mt-4 p-4 bg-purple-50 rounded-lg border border-purple-200">
+                    <div className="flex items-center justify-between mb-3">
+                      <Label className="flex items-center cursor-pointer">
+                        <Checkbox checked={isWeeklyRecurring} onCheckedChange={setIsWeeklyRecurring} className="mr-2" />
+                        <span className="font-semibold text-purple-900">每周重复</span>
+                      </Label>
+                    </div>
+                    
+                    {isWeeklyRecurring && <div className="space-y-3">
+                      <div>
+                        <Label className="text-sm text-purple-800">重复周数</Label>
+                        <Select value={String(recurringWeeks)} onValueChange={value => setRecurringWeeks(parseInt(value))}>
+                          <SelectTrigger className="mt-1">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="2">2周</SelectItem>
+                            <SelectItem value="4">4周</SelectItem>
+                            <SelectItem value="8">8周</SelectItem>
+                            <SelectItem value="12">12周</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <Alert className="bg-purple-100 border-purple-300">
+                        <AlertCircle className="h-4 w-4 text-purple-800" />
+                        <AlertTitle className="text-purple-900">重复预订说明</AlertTitle>
+                        <AlertDescription className="text-purple-800 text-sm">
+                          将自动创建本周及未来{recurringWeeks}周，每周{new Date(selectedDate).toLocaleDateString('zh-CN', {
+                            weekday: 'long'
+                          })}的相同时间段预订。
+                          <br />
+                          如需取消重复预订，请联系管理员删除相关记录。
+                        </AlertDescription>
+                      </Alert>
+                    </div>}
+                  </div>}
 
                   <div>
                     <Label>时间占用情况</Label>
