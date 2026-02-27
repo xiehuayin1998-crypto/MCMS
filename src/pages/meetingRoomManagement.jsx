@@ -1,9 +1,9 @@
 // @ts-ignore;
 import React, { useState, useEffect, useCallback } from 'react';
 // @ts-ignore;
-import { Button, Card, CardContent, CardHeader, CardTitle, Badge, useToast, Alert, AlertDescription, AlertTitle, Tabs, TabsContent, TabsList, TabsTrigger, Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, Textarea, Input, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui';
+import { Button, Card, CardContent, CardHeader, CardTitle, Badge, useToast, Alert, AlertDescription, AlertTitle, Tabs, TabsContent, TabsList, TabsTrigger, Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription, Textarea, Input, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui';
 // @ts-ignore;
-import { Calendar, Clock, Users, Building, User, FileText, CheckCircle, XCircle, AlertCircle, ArrowLeft, Search, MapPin, Settings, Eye, ClipboardList, Monitor, Coffee, Filter, RefreshCw, Undo2, History, Plus, Edit, Trash2 } from 'lucide-react';
+import { Calendar, Clock, Users, Building, User, FileText, CheckCircle, XCircle, AlertCircle, ArrowLeft, Search, MapPin, Settings, Eye, ClipboardList, Monitor, Coffee, Filter, RefreshCw, Undo2, History, Plus, Edit, Trash2, CheckCheck } from 'lucide-react';
 
 // @ts-ignore;
 import { UserHeader } from '@/components/UserHeader';
@@ -38,6 +38,10 @@ export default function MeetingRoomManagementPage(props) {
     capacity: '',
     status: '可使用'
   });
+
+  // 新增状态：批量审批
+  const [showBatchApproveDialog, setShowBatchApproveDialog] = React.useState(false);
+  const [isBatchApproving, setIsBatchApproving] = React.useState(false);
 
   // 从UTC时间戳获取本地日期
   const utcToLocalDate = timestamp => {
@@ -451,8 +455,85 @@ export default function MeetingRoomManagementPage(props) {
       return;
     }
     setSelectedBooking(booking);
-    setRevokeReason('');
     setRevokeDialogOpen(true);
+  };
+
+  // 一键审批所有待审批申请
+  const handleBatchApprove = async () => {
+    const pendingBookings = bookings.filter(booking => booking.status === '待审批');
+    if (pendingBookings.length === 0) {
+      toast({
+        title: "无待审批申请",
+        description: "当前没有待审批的会议室申请",
+        variant: "destructive"
+      });
+      return;
+    }
+    setShowBatchApproveDialog(true);
+  };
+
+  // 确认批量审批
+  const confirmBatchApprove = async () => {
+    try {
+      setIsBatchApproving(true);
+      const pendingBookings = bookings.filter(booking => booking.status === '待审批');
+      let successCount = 0;
+      let failCount = 0;
+
+      // 批量更新所有待审批申请
+      for (const booking of pendingBookings) {
+        try {
+          const result = await $w.cloud.callDataSource({
+            dataSourceName: 'mc_meeting_booking',
+            methodName: 'wedaUpdateV2',
+            params: {
+              data: {
+                status: '已通过',
+                updatedAt: new Date().getTime()
+              },
+              filter: {
+                where: {
+                  _id: {
+                    $eq: booking._id
+                  }
+                }
+              }
+            }
+          });
+          if (result.count > 0) {
+            successCount++;
+          } else {
+            failCount++;
+          }
+        } catch (error) {
+          console.error(`审批申请 ${booking.topic} 失败:`, error);
+          failCount++;
+        }
+      }
+      if (successCount > 0) {
+        toast({
+          title: "批量审批完成",
+          description: `成功审批 ${successCount} 条申请${failCount > 0 ? `，失败 ${failCount} 条` : ''}`
+        });
+        loadBookings();
+      } else {
+        toast({
+          title: "批量审批失败",
+          description: "所有申请审批失败，请重试",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error('批量审批失败:', error);
+      toast({
+        title: "批量审批失败",
+        description: error.message || "批量审批过程中发生错误",
+        variant: "destructive"
+      });
+    } finally {
+      setIsBatchApproving(false);
+      setShowBatchApproveDialog(false);
+    }
   };
 
   // 新增：会议室管理功能
@@ -639,10 +720,16 @@ export default function MeetingRoomManagementPage(props) {
         <TabsContent value="approval" className="space-y-6">
           <div className="flex justify-between items-center">
             <h2 className="text-xl font-semibold text-gray-900">待审批申请</h2>
-            <Button onClick={loadBookings} variant="outline" size="sm" className="flex items-center">
-              <RefreshCw className="w-4 h-4 mr-2" />
-              刷新
-            </Button>
+            <div className="flex space-x-2">
+              <Button onClick={loadBookings} variant="outline" size="sm" className="flex items-center">
+                <RefreshCw className="w-4 h-4 mr-2" />
+                刷新
+              </Button>
+              <Button className="bg-green-600 hover:bg-green-700 flex items-center" onClick={handleBatchApprove} disabled={pendingBookings.length === 0}>
+                <CheckCheck className="w-4 h-4 mr-2" />
+                一键审批
+              </Button>
+            </div>
           </div>
 
           {pendingBookings.length === 0 ? <div className="text-center py-12">
@@ -918,6 +1005,31 @@ export default function MeetingRoomManagementPage(props) {
           </div>}
         </TabsContent>
       </Tabs>
+
+      {/* 批量审批确认对话框 */}
+      <Dialog open={showBatchApproveDialog} onOpenChange={setShowBatchApproveDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center">
+              <CheckCheck className="w-5 h-5 mr-2 text-green-600" />
+              确认批量审批
+            </DialogTitle>
+            <DialogDescription>
+              确定要将所有 <span className="font-bold text-green-600">{bookings.filter(b => b.status === '待审批').length}</span> 条待审批申请全部通过吗？
+              <br />
+              此操作将一次性审批所有待审批的会议室申请，无法撤销。
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowBatchApproveDialog(false)} disabled={isBatchApproving}>
+              取消
+            </Button>
+            <Button className="bg-green-600 hover:bg-green-700" onClick={confirmBatchApprove} disabled={isBatchApproving}>
+              {isBatchApproving ? '审批中...' : '确认全部通过'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* 撤销对话框 */}
       <Dialog open={revokeDialogOpen} onOpenChange={setRevokeDialogOpen}>
