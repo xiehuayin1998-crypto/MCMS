@@ -525,6 +525,9 @@ export default function MeetingRoomBooking(props) {
         originalDescription: description,
         recurringInfo: recurringInfo
       }) : description;
+
+      // 每周重复的预订直接自动通过，无需审批
+      const bookingStatus = isWeeklyRecurring && isAdmin ? '已通过' : '待审批';
       const result = await $w.cloud.callDataSource({
         dataSourceName: 'mc_meeting_booking',
         methodName: 'wedaCreateV2',
@@ -541,7 +544,7 @@ export default function MeetingRoomBooking(props) {
             // 保存选择的设备ID数组
             services: selectedServices,
             // 保存选择的服务ID数组
-            status: '待审批',
+            status: bookingStatus,
             createdAt: new Date().getTime()
           }
         }
@@ -572,7 +575,8 @@ export default function MeetingRoomBooking(props) {
                     description: finalDescription,
                     devices: selectedDevices,
                     services: selectedServices,
-                    status: '待审批',
+                    status: '已通过',
+                    // 重复预订直接自动通过
                     createdAt: new Date().getTime()
                   }
                 }
@@ -583,7 +587,7 @@ export default function MeetingRoomBooking(props) {
           }
           toast({
             title: "预定成功",
-            description: `已创建${recurringWeeks + 1}个重复预订（本周及未来${recurringWeeks}周）`
+            description: `已创建${recurringWeeks + 1}个重复预订（本周及未来${recurringWeeks}周），所有预订已自动通过`
           });
         } else {
           toast({
