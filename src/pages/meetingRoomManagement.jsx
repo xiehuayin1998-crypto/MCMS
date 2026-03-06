@@ -621,7 +621,20 @@ export default function MeetingRoomManagementPage(props) {
       return applicantMatch || roomNameMatch || roomLocationMatch || dateMatch || startTimeMatch || endTimeMatch || topicMatch;
     });
     setFilteredHistory(filtered);
+    setCurrentPage(1); // 搜索时重置到第一页
   }, [searchKeyword, approvalHistory, meetingRooms]);
+  
+  // 计算分页数据
+  const totalPages = Math.ceil(filteredHistory.length / itemsPerPage);
+  const paginatedHistory = filteredHistory.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+  
+  // 翻页处理
+  const handlePageChange = page => {
+    setCurrentPage(page);
+  };
   return <div className="min-h-screen bg-gray-50" style={style}>
     <UserHeader $w={$w} showHomeButton={true} />
 
@@ -785,10 +798,20 @@ export default function MeetingRoomManagementPage(props) {
             </div>
             
             {/* 搜索结果提示 */}
-            {searchKeyword && <div className="text-sm text-gray-600">
-              共找到 <span className="font-semibold text-blue-600">{filteredHistory.length}</span> 条记录
-              {filteredHistory.length === 0 && <span className="ml-2">，未找到匹配的结果</span>}
-            </div>}
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+              {searchKeyword && <div className="text-sm text-gray-600">
+                共找到 <span className="font-semibold text-blue-600">{filteredHistory.length}</span> 条记录
+                {filteredHistory.length === 0 && <span className="ml-2">，未找到匹配的结果</span>}
+              </div>}
+              {!searchKeyword && <div className="text-sm text-gray-600">
+                共 <span className="font-semibold text-blue-600">{filteredHistory.length}</span> 条记录
+              </div>}
+              
+              {/* 分页信息 */}
+              {filteredHistory.length > 0 && <div className="text-sm text-gray-600">
+                第 {currentPage} / {totalPages} 页
+              </div>}
+            </div>
           </div>
 
           {filteredHistory.length === 0 && searchKeyword === '' ? <div className="text-center py-12">
@@ -799,7 +822,145 @@ export default function MeetingRoomManagementPage(props) {
             <Search className="w-16 h-16 mx-auto text-gray-300 mb-4" />
             <h3 className="text-lg font-medium text-gray-900">未找到匹配结果</h3>
             <p className="text-gray-600">请尝试其他搜索关键词</p>
-          </div> : <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          </div> : <div>
+            {/* 分页卡片列表 */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {paginatedHistory.map(booking => {
+                const isStarted = isMeetingStarted(booking);
+                const isEnded = isMeetingEnded(booking);
+                const canRevoke = booking.status === '已通过' && !isStarted && !isEnded;
+                return <Card key={booking._id} className="hover:shadow-lg transition-shadow">
+                  <CardHeader className="pb-3">
+                    <div className="flex justify-between items-start">
+                      <CardTitle className="text-lg">{booking.topic}</CardTitle>
+                      <div className="flex flex-col items-end gap-1">
+                        <Badge variant="secondary" className={getStatusColor(booking.status)}>
+                          {booking.status}
+                        </Badge>
+                        {isEnded && <Badge variant="outline" className="text-xs bg-gray-100 text-gray-600">
+                          已结束
+                        </Badge>}
+                        {isStarted && !isEnded && <Badge variant="outline" className="text-xs bg-blue-100 text-blue-600">
+                          进行中
+                        </Badge>}
+                        {!isStarted && !isEnded && <Badge variant="outline" className="text-xs bg-green-100 text-green-600">
+                          未开始
+                        </Badge>}
+                      </div>
+                    </div>
+                    <div className="flex items-center text-sm text-gray-600">
+                      <User className="w-4 h-4 mr-1" />
+                      <span>{booking.applicant}</span>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="space-y-2">
+                      <div className="flex items-center text-sm">
+                        <Building className="w-4 h-4 mr-2 text-gray-600" />
+                        <span>{getRoomName(booking.roomId)}</span>
+                      </div>
+                      <div className="flex items-center text-sm">
+                        <MapPin className="w-4 h-4 mr-2 text-gray-600" />
+                        <span>{getRoomLocation(booking.roomId)}</span>
+                      </div>
+                      <div className="flex items-center text-sm">
+                        <Calendar className="w-4 h-4 mr-2 text-gray-600" />
+                        <span>{utcToLocalDate(booking.startTime)}</span>
+                      </div>
+                      <div className="flex items-center text-sm">
+                        <Clock className="w-4 h-4 mr-2 text-gray-600" />
+                        <span>{utcToLocalTime(booking.startTime)} - {utcToLocalTime(booking.endTime)}</span>
+                      </div>
+                      <div className="flex items-center text-sm">
+                        <Users className="w-4 h-4 mr-2 text-gray-600" />
+                        <span>{booking.attendeeCount}人</span>
+                      </div>
+                      
+                      {/* 显示会议设备 */}
+                      {booking.devices && booking.devices.length > 0 && <div className="flex items-start text-sm">
+                        <Monitor className="w-4 h-4 mr-2 text-gray-600 mt-0.5" />
+                        <div>
+                          <span className="font-medium">设备：</span>
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {booking.devices.map(deviceId => <Badge key={deviceId} variant="outline" className="text-xs">
+                              {getDeviceName(deviceId)}
+                            </Badge>)}
+                          </div>
+                        </div>
+                      </div>}
+                      
+                      {/* 显示会议服务 */}
+                      {booking.services && booking.services.length > 0 && <div className="flex items-start text-sm">
+                        <Coffee className="w-4 h-4 mr-2 text-gray-600 mt-0.5" />
+                        <div>
+                          <span className="font-medium">服务：</span>
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {booking.services.map(serviceId => <Badge key={serviceId} variant="outline" className="text-xs">
+                              {getServiceName(serviceId)}
+                            </Badge>)}
+                          </div>
+                        </div>
+                      </div>}
+                      
+                      {booking.description && <div className="flex items-start text-sm">
+                        <FileText className="w-4 h-4 mr-2 text-gray-600 mt-0.5" />
+                        <div>
+                          <span className="font-medium">描述：</span>
+                          <p className="text-gray-600 mt-1">{booking.description}</p>
+                        </div>
+                      </div>}
+                      
+                      {booking.rejectReason && <div className="flex items-start text-sm">
+                        <AlertCircle className="w-4 h-4 mr-2 text-red-600 mt-0.5" />
+                        <div>
+                          <span className="font-medium">拒绝原因：</span>
+                          <p className="text-red-600 mt-1">{booking.rejectReason}</p>
+                        </div>
+                      </div>}
+                    </div>
+
+                    {canRevoke && <div className="pt-2">
+                      <Button onClick={() => openRevokeDialog(booking)} variant="outline" className="w-full" disabled={isLoading}>
+                        <Undo2 className="w-4 h-4 mr-1" />
+                        撤销通过
+                      </Button>
+                    </div>}
+                  </CardContent>
+                </Card>;
+              })}
+            </div>
+            
+            {/* 分页组件 */}
+            {totalPages > 1 && <div className="flex justify-center mt-8">
+              <div className="flex items-center space-x-2">
+                <Button onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1} variant="outline" size="sm">
+                  上一页
+                </Button>
+                
+                {Array.from({
+                  length: totalPages
+                }, (_, i) => i + 1).map(page => {
+                  // 显示前3页、当前页附近3页、后3页
+                  if (page === 1 || page === totalPages || page >= currentPage - 2 && page <= currentPage + 2) {
+                    return <Button key={page} onClick={() => handlePageChange(page)} variant={currentPage === page ? 'default' : 'outline'} size="sm" className={currentPage === page ? 'bg-blue-600 hover:bg-blue-700' : ''}>
+                      {page}
+                    </Button>;
+                  }
+                  // 显示省略号
+                  if (page === currentPage - 3 || page === currentPage + 3) {
+                    return <span key={page} className="px-2 text-gray-500">
+                      ...
+                    </span>;
+                  }
+                  return null;
+                })}
+                
+                <Button onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages} variant="outline" size="sm">
+                  下一页
+                </Button>
+              </div>
+            </div>}
+          </div>}
             {filteredHistory.map(booking => {
               const isStarted = isMeetingStarted(booking);
               const isEnded = isMeetingEnded(booking);
@@ -903,7 +1064,38 @@ export default function MeetingRoomManagementPage(props) {
                 </CardContent>
               </Card>;
             })}
-          </div>}
+            
+            {/* 分页组件 */}
+            {totalPages > 1 && <div className="flex justify-center mt-8">
+              <div className="flex items-center space-x-2">
+                <Button onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1} variant="outline" size="sm">
+                  上一页
+                </Button>
+                
+                {Array.from({
+                  length: totalPages
+                }, (_, i) => i + 1).map(page => {
+                  // 显示前3页、当前页附近3页、后3页
+                  if (page === 1 || page === totalPages || page >= currentPage - 2 && page <= currentPage + 2) {
+                    return <Button key={page} onClick={() => handlePageChange(page)} variant={currentPage === page ? 'default' : 'outline'} size="sm" className={currentPage === page ? 'bg-blue-600 hover:bg-blue-700' : ''}>
+                      {page}
+                    </Button>;
+                  }
+                  // 显示省略号
+                  if (page === currentPage - 3 || page === currentPage + 3) {
+                    return <span key={page} className="px-2 text-gray-500">
+                      ...
+                    </span>;
+                  }
+                  return null;
+                })}
+                
+                <Button onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages} variant="outline" size="sm">
+                  下一页
+                </Button>
+              </div>
+            </div>}
+          </div>
         </TabsContent>
 
         {/* 新增：会议室管理标签页 */}
