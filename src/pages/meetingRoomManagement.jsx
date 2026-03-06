@@ -811,18 +811,20 @@ export default function MeetingRoomManagementPage(props) {
               {filteredHistory.length > 0 && <div className="text-sm text-gray-600">
                 第 {currentPage} / {totalPages} 页
               </div>}
+            </div>
 
-          {filteredHistory.length === 0 && searchKeyword === '' ? <div className="text-center py-12">
-            <History className="w-16 h-16 mx-auto text-gray-300 mb-4" />
-            <h3 className="text-lg font-medium text-gray-900">暂无审批历史</h3>
-            <p className="text-gray-600">还没有处理任何申请</p>
-          </div> : filteredHistory.length === 0 && searchKeyword !== '' ? <div className="text-center py-12">
-            <Search className="w-16 h-16 mx-auto text-gray-300 mb-4" />
-            <h3 className="text-lg font-medium text-gray-900">未找到匹配结果</h3>
-            <p className="text-gray-600">请尝试其他搜索关键词</p>
-          </div> : <div>
-            {/* 分页卡片列表 */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <>
+            {filteredHistory.length === 0 && searchKeyword === '' ? <div className="text-center py-12">
+              <History className="w-16 h-16 mx-auto text-gray-300 mb-4" />
+              <h3 className="text-lg font-medium text-gray-900">暂无审批历史</h3>
+              <p className="text-gray-600">还没有处理任何申请</p>
+            </div> : filteredHistory.length === 0 && searchKeyword !== '' ? <div className="text-center py-12">
+              <Search className="w-16 h-16 mx-auto text-gray-300 mb-4" />
+              <h3 className="text-lg font-medium text-gray-900">未找到匹配结果</h3>
+              <p className="text-gray-600">请尝试其他搜索关键词</p>
+            </div> : <div>
+              {/* 分页卡片列表 */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {paginatedHistory.map(booking => {
                 const isStarted = isMeetingStarted(booking);
                 const isEnded = isMeetingEnded(booking);
@@ -958,7 +960,8 @@ export default function MeetingRoomManagementPage(props) {
                 </Button>
               </div>
             </div>}
-          </div>
+            </div>
+          </>
           </div>
         </TabsContent>
 
