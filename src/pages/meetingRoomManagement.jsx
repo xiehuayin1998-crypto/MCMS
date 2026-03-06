@@ -591,12 +591,37 @@ export default function MeetingRoomManagementPage(props) {
 
   // 过滤待审批的申请
   const pendingBookings = bookings.filter(booking => booking.status === '待审批');
-  // 过滤已通过的申请
-  const approvedBookings = bookings.filter(booking => booking.status === '已通过');
-  // 过滤已拒绝的申请
-  const rejectedBookings = bookings.filter(booking => booking.status === '已拒绝');
-  // 整合审批历史（已通过 + 已拒绝）
-  const approvalHistory = [...approvedBookings, ...rejectedBookings].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  // 审批历史包含所有预订数据
+  const approvalHistory = bookings.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+  // 搜索状态
+  const [searchKeyword, setSearchKeyword] = React.useState('');
+  const [filteredHistory, setFilteredHistory] = React.useState([]);
+
+  // 搜索功能
+  React.useEffect(() => {
+    if (!searchKeyword.trim()) {
+      setFilteredHistory(approvalHistory);
+      return;
+    }
+    const keyword = searchKeyword.toLowerCase();
+    const filtered = approvalHistory.filter(booking => {
+      // 搜索申请人
+      const applicantMatch = booking.applicant && booking.applicant.toLowerCase().includes(keyword);
+      // 搜索会议室
+      const roomNameMatch = getRoomName(booking.roomId).toLowerCase().includes(keyword);
+      const roomLocationMatch = getRoomLocation(booking.roomId).toLowerCase().includes(keyword);
+      // 搜索日期（格式：YYYY-MM-DD）
+      const dateMatch = utcToLocalDate(booking.startTime).includes(keyword);
+      // 搜索时间
+      const startTimeMatch = utcToLocalTime(booking.startTime).includes(keyword);
+      const endTimeMatch = utcToLocalTime(booking.endTime).includes(keyword);
+      // 搜索会议主题
+      const topicMatch = booking.topic && booking.topic.toLowerCase().includes(keyword);
+      return applicantMatch || roomNameMatch || roomLocationMatch || dateMatch || startTimeMatch || endTimeMatch || topicMatch;
+    });
+    setFilteredHistory(filtered);
+  }, [searchKeyword, approvalHistory, meetingRooms]);
   return <div className="min-h-screen bg-gray-50" style={style}>
     <UserHeader $w={$w} showHomeButton={true} />
 
@@ -627,7 +652,7 @@ export default function MeetingRoomManagementPage(props) {
           </TabsTrigger>
           <TabsTrigger value="history" className="flex items-center space-x-2">
             <History className="w-4 h-4" />
-            <span>审批历史 ({approvalHistory.length})</span>
+            <span>审批历史 ({bookings.length})</span>
           </TabsTrigger>
           <TabsTrigger value="rooms" className="flex items-center space-x-2">
             <Building className="w-4 h-4" />
@@ -738,20 +763,44 @@ export default function MeetingRoomManagementPage(props) {
 
         {/* 审批历史标签页 */}
         <TabsContent value="history" className="space-y-6">
-          <div className="flex justify-between items-center">
-            <h2 className="text-xl font-semibold text-gray-900">审批历史</h2>
-            <Button onClick={loadBookings} variant="outline" size="sm" className="flex items-center">
-              <RefreshCw className="w-4 h-4 mr-2" />
-              刷新
-            </Button>
+          <div className="space-y-4">
+            {/* 标题和搜索栏 */}
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <div className="flex items-center justify-between w-full sm:w-auto">
+                <h2 className="text-xl font-semibold text-gray-900">审批历史</h2>
+                <Button onClick={loadBookings} variant="outline" size="sm" className="flex items-center ml-4">
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  刷新
+                </Button>
+              </div>
+              
+              {/* 搜索框 */}
+              <div className="relative w-full sm:w-80">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Input placeholder="搜索申请人、会议室、时间..." value={searchKeyword} onChange={e => setSearchKeyword(e.target.value)} className="pl-10" />
+                {searchKeyword && <button onClick={() => setSearchKeyword('')} className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                  ✕
+                </button>}
+              </div>
+            </div>
+            
+            {/* 搜索结果提示 */}
+            {searchKeyword && <div className="text-sm text-gray-600">
+              共找到 <span className="font-semibold text-blue-600">{filteredHistory.length}</span> 条记录
+              {filteredHistory.length === 0 && <span className="ml-2">，未找到匹配的结果</span>}
+            </div>}
           </div>
 
-          {approvalHistory.length === 0 ? <div className="text-center py-12">
+          {filteredHistory.length === 0 && searchKeyword === '' ? <div className="text-center py-12">
             <History className="w-16 h-16 mx-auto text-gray-300 mb-4" />
             <h3 className="text-lg font-medium text-gray-900">暂无审批历史</h3>
             <p className="text-gray-600">还没有处理任何申请</p>
+          </div> : filteredHistory.length === 0 && searchKeyword !== '' ? <div className="text-center py-12">
+            <Search className="w-16 h-16 mx-auto text-gray-300 mb-4" />
+            <h3 className="text-lg font-medium text-gray-900">未找到匹配结果</h3>
+            <p className="text-gray-600">请尝试其他搜索关键词</p>
           </div> : <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {approvalHistory.map(booking => {
+            {filteredHistory.map(booking => {
               const isStarted = isMeetingStarted(booking);
               const isEnded = isMeetingEnded(booking);
               const canRevoke = booking.status === '已通过' && !isStarted && !isEnded;
